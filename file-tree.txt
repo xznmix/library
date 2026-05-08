@@ -1,0 +1,496 @@
+File Tree: perpustakaan-sman1
+Generated on: 4/6/2026, 2:33:24 PM
+Root path: c:\laragon\www\perpustakaan-sman1
+
+────────────────────────────────────────────────────────────────────────────────
+
+├── 📁 app/
+│   ├── 📁 Console/
+│   │   └── 📁 Commands/
+│   │       └── 🐘 CleanupDigitalLoans.php
+│   ├── 📁 Exports/
+│   │   ├── 🐘 ActivitiesExport.php
+│   │   ├── 🐘 AnggotaExport.php
+│   │   ├── 🐘 BukuExport.php
+│   │   ├── 🐘 DendaExport.php
+│   │   ├── 🐘 KeuanganExport.php
+│   │   ├── 🐘 KinerjaExport.php
+│   │   ├── 🐘 KunjunganExport.php
+│   │   ├── 🐘 LaporanGabunganExport.php
+│   │   ├── 🐘 PeminjamanExport.php
+│   │   ├── 🐘 RingkasanExport.php
+│   │   └── 🐘 UsersExport.php
+│   ├── 📁 Helpers/
+│   │   └── 🐘 AnggotaHelper.php
+│   ├── 📁 Http/
+│   │   ├── 📁 Controllers/
+│   │   │   ├── 📁 Admin/
+│   │   │   │   ├── 🐘 AdminController.php
+│   │   │   │   ├── 🐘 ExportController.php
+│   │   │   │   ├── 🐘 KelolaAkunController.php
+│   │   │   │   └── 🐘 LaporanController.php
+│   │   │   ├── 📁 Anggota/
+│   │   │   │   ├── 🐘 AnggotaController.php
+│   │   │   │   ├── 🐘 KoleksiDigitalController.php
+│   │   │   │   ├── 🐘 ProfilController.php
+│   │   │   │   └── 🐘 RiwayatController.php
+│   │   │   ├── 📁 Auth/
+│   │   │   │   ├── 🐘 AuthenticatedSessionController.php
+│   │   │   │   ├── 🐘 ConfirmablePasswordController.php
+│   │   │   │   ├── 🐘 EmailVerificationNotificationController.php
+│   │   │   │   ├── 🐘 EmailVerificationPromptController.php
+│   │   │   │   ├── 🐘 NewPasswordController.php
+│   │   │   │   ├── 🐘 PasswordController.php
+│   │   │   │   ├── 🐘 PasswordResetLinkController.php
+│   │   │   │   ├── 🐘 RegisteredUserController.php
+│   │   │   │   └── 🐘 VerifyEmailController.php
+│   │   │   ├── 📁 KepalaPustaka/
+│   │   │   │   ├── 🐘 AuditBukuController.php
+│   │   │   │   ├── 🐘 DashboardController.php
+│   │   │   │   ├── 🐘 KepalaPustakaController.php
+│   │   │   │   ├── 🐘 LaporanController.php
+│   │   │   │   └── 🐘 VerifikasiDendaController.php
+│   │   │   ├── 📁 Petugas/
+│   │   │   │   ├── 🐘 BukuController.php
+│   │   │   │   ├── 🐘 DashboardController.php
+│   │   │   │   ├── 🐘 KatalogController.php
+│   │   │   │   ├── 🐘 KeanggotaanController.php
+│   │   │   │   ├── 🐘 KoleksiDigitalController.php
+│   │   │   │   ├── 🐘 KunjunganController.php
+│   │   │   │   ├── 🐘 PetugasController.php
+│   │   │   │   ├── 🐘 ReportController.php
+│   │   │   │   └── 🐘 SirkulasiController.php
+│   │   │   ├── 📁 Pimpinan/
+│   │   │   │   ├── 🐘 DashboardController.php
+│   │   │   │   ├── 🐘 ExportController.php
+│   │   │   │   ├── 🐘 KinerjaController.php
+│   │   │   │   ├── 🐘 LaporanController.php
+│   │   │   │   └── 🐘 PimpinanController.php
+│   │   │   ├── 🐘 Controller.php
+│   │   │   ├── 🐘 DigitalCollectionController.php
+│   │   │   ├── 🐘 DigitalReadController.php
+│   │   │   ├── 🐘 ForcePasswordController.php
+│   │   │   ├── 🐘 KunjunganController.php
+│   │   │   ├── 🐘 OPACController.php
+│   │   │   └── 🐘 ProfileController.php
+│   │   ├── 📁 Middleware/
+│   │   │   ├── 🐘 Authenticate.php
+│   │   │   ├── 🐘 CheckRole.php
+│   │   │   └── 🐘 LogActivity.php
+│   │   └── 📁 Requests/
+│   │       ├── 📁 Auth/
+│   │       │   └── 🐘 LoginRequest.php
+│   │       └── 🐘 ProfileUpdateRequest.php
+│   ├── 📁 Imports/
+│   │   └── 🐘 UsersImport.php
+│   ├── 📁 Mail/
+│   │   └── 🐘 EmailVerificationMail.php
+│   ├── 📁 Models/
+│   │   ├── 🐘 ActivityLog.php
+│   │   ├── 🐘 Anggota.php
+│   │   ├── 🐘 Buku.php
+│   │   ├── 🐘 BukuDigital.php
+│   │   ├── 🐘 BukuLog.php
+│   │   ├── 🐘 Denda.php
+│   │   ├── 🐘 DigitalAccess.php
+│   │   ├── 🐘 DigitalAccessLog.php
+│   │   ├── 🐘 FavoritBuku.php
+│   │   ├── 🐘 KategoriBuku.php
+│   │   ├── 🐘 Kunjungan.php
+│   │   ├── 🐘 Notifikasi.php
+│   │   ├── 🐘 Peminjaman.php
+│   │   ├── 🐘 PeminjamanDigital.php
+│   │   ├── 🐘 PeminjamanLog.php
+│   │   ├── 🐘 Penulis.php
+│   │   ├── 🐘 StockOpname.php
+│   │   ├── 🐘 StockOpnameLog.php
+│   │   ├── 🐘 UlasanBuku.php
+│   │   └── 🐘 User.php
+│   ├── 📁 Providers/
+│   │   ├── 🐘 AppServiceProvider.php
+│   │   └── 🐘 ViewServiceProvider.php
+│   ├── 📁 Services/
+│   │   ├── 🐘 DashboardService.php
+│   │   ├── 🐘 DigitalBorrowService.php
+│   │   └── 🐘 FonnteService.php
+│   └── 📁 View/
+│       └── 📁 Components/
+│           ├── 🐘 AppLayout.php
+│           └── 🐘 GuestLayout.php
+├── 📁 bootstrap/
+│   ├── 🐘 app.php
+│   └── 🐘 providers.php
+├── 📁 config/
+│   ├── 🐘 app.php
+│   ├── 🐘 auth.php
+│   ├── 🐘 cache.php
+│   ├── 🐘 database.php
+│   ├── 🐘 excel.php
+│   ├── 🐘 filesystems.php
+│   ├── 🐘 logging.php
+│   ├── 🐘 mail.php
+│   ├── 🐘 queue.php
+│   ├── 🐘 services.php
+│   └── 🐘 session.php
+├── 📁 database/
+│   ├── 📁 factories/
+│   │   └── 🐘 UserFactory.php
+│   ├── 📁 migrations/
+│   │   ├── 🐘 0001_01_01_000001_create_cache_table.php
+│   │   ├── 🐘 0001_01_01_000002_create_jobs_table.php
+│   │   ├── 🐘 2026_02_07_080217_create_users_table.php
+│   │   ├── 🐘 2026_02_07_080651_create_anggotas_table.php
+│   │   ├── 🐘 2026_02_07_081049_create_sessions_table.php
+│   │   ├── 🐘 2026_02_11_082412_add_force_password_change_to_users_table.php
+│   │   ├── 🐘 2026_02_14_075000_create_kategori_buku_table.php
+│   │   ├── 🐘 2026_02_14_080000_create_buku_table.php
+│   │   ├── 🐘 2026_02_14_080541_create_kunjungan_table.php
+│   │   ├── 🐘 2026_02_14_082649_create_penulis_table.php
+│   │   ├── 🐘 2026_02_14_082651_create_buku_logs_table.php
+│   │   ├── 🐘 2026_02_14_082652_create_buku_penulis_table.php
+│   │   ├── 🐘 2026_02_14_084558_create_peminjaman_table.php
+│   │   ├── 🐘 2026_02_14_084915_create_peminjaman_logs_table.php
+│   │   ├── 🐘 2026_02_14_090732_create_favorit_buku_table.php
+│   │   ├── 🐘 2026_02_14_094518_add_statistik_to_users_table.php
+│   │   ├── 🐘 2026_02_20_173546_add_fields_to_users_table_for_anggota_v2.php
+│   │   ├── 🐘 2026_02_20_184331_add_digital_license_fields_to_buku_table.php
+│   │   ├── 🐘 2026_02_20_184353_create_peminjaman_digital_table.php
+│   │   ├── 🐘 2026_02_20_184549_create_digital_access_logs_table.php
+│   │   ├── 🐘 2026_02_20_200744_add_kondisi_to_peminjaman_table.php
+│   │   ├── 🐘 2026_02_25_000419_add_columns_to_kunjungan_table.php
+│   │   ├── 🐘 2026_02_25_010247_remove_status_and_jam_keluar_from_kunjungan.php
+│   │   ├── 🐘 2026_02_25_060511_add_verification_to_peminjaman_table.php
+│   │   ├── 🐘 2026_02_25_060543_create_activity_logs_table.php
+│   │   ├── 🐘 2026_03_03_151213_add_pekerjaan_to_users_table.php
+│   │   ├── 🐘 2026_03_03_151643_add_complete_registration_fields_to_users.php
+│   │   ├── 🐘 2026_03_10_162243_create_digital_accesses_table.php
+│   │   ├── 🐘 2026_03_10_162618_create_buku_digitals_table.php
+│   │   ├── 🐘 2026_03_11_045524_update_no_anggota_for_existing_users.php
+│   │   ├── 🐘 2026_03_13_162132_add_audit_fields_to_buku_table.php
+│   │   ├── 🐘 2026_03_13_162135_add_verifikasi_fields_to_peminjaman_table.php
+│   │   ├── 🐘 2026_03_13_162138_create_stock_opname_table.php
+│   │   ├── 🐘 2026_03_13_231006_create_notifikasi_table.php
+│   │   └── 🐘 2026_03_13_232930_add_updated_by_to_peminjaman_table.php
+│   ├── 📁 seeders/
+│   │   ├── 🐘 AdminUserSeeder.php
+│   │   └── 🐘 DatabaseSeeder.php
+│   ├── ⚙️ .gitignore
+│   └── 📄 database.sqlite
+├── 📁 public/
+│   ├── 📁 img/
+│   │   ├── 🖼️ logo.jpg
+│   │   └── 🖼️ profil.jpg
+│   ├── ⚙️ .htaccess
+│   ├── 📄 favicon.ico
+│   ├── 🐘 index.php
+│   └── 📄 robots.txt
+├── 📁 resources/
+│   ├── 📁 css/
+│   │   └── 🎨 app.css
+│   ├── 📁 js/
+│   │   ├── 📄 app.js
+│   │   └── 📄 bootstrap.js
+│   └── 📁 views/
+│       ├── 📁 admin/
+│       │   ├── 📁 exports/
+│       │   │   └── 🐘 akun-pdf.blade.php
+│       │   ├── 📁 layouts/
+│       │   │   ├── 🐘 app.blade.php
+│       │   │   ├── 🐘 css.blade.php
+│       │   │   ├── 🐘 footer.blade.php
+│       │   │   ├── 🐘 js.blade.php
+│       │   │   ├── 🐘 sidebar.blade.php
+│       │   │   └── 🐘 topbar.blade.php
+│       │   ├── 📁 pages/
+│       │   │   ├── 📁 kelola-akun/
+│       │   │   │   ├── 🐘 create.blade.php
+│       │   │   │   ├── 🐘 edit.blade.php
+│       │   │   │   └── 🐘 index.blade.php
+│       │   │   └── 📁 laporan/
+│       │   │       └── 🐘 index.blade.php
+│       │   ├── 📁 partials/
+│       │   │   └── 🐘 activity-list.blade.php
+│       │   └── 🐘 dashboard.blade.php
+│       ├── 📁 anggota/
+│       │   ├── 📁 layouts/
+│       │   │   ├── 🐘 app.blade.php
+│       │   │   ├── 🐘 css.blade.php
+│       │   │   ├── 🐘 footer.blade.php
+│       │   │   ├── 🐘 js.blade.php
+│       │   │   ├── 🐘 sidebar.blade.php
+│       │   │   └── 🐘 topbar.blade.php
+│       │   ├── 📁 pages/
+│       │   │   ├── 📁 koleksi-digital/
+│       │   │   │   ├── 🐘 index.blade.php
+│       │   │   │   └── 🐘 show.blade.php
+│       │   │   ├── 📁 profil/
+│       │   │   │   └── 🐘 index.blade.php
+│       │   │   └── 📁 riwayat/
+│       │   │       └── 🐘 index.blade.php
+│       │   └── 🐘 dashboard.blade.php
+│       ├── 📁 auth/
+│       │   ├── 📁 layouts/
+│       │   │   └── 🐘 guest.blade.php
+│       │   ├── 🐘 confirm-password.blade.php
+│       │   ├── 🐘 forgot-password.blade.php
+│       │   ├── 🐘 login.blade.php
+│       │   ├── 🐘 register-confirm.blade.php
+│       │   ├── 🐘 register-pending.blade.php
+│       │   ├── 🐘 register.blade.php
+│       │   ├── 🐘 reset-password.blade.php
+│       │   └── 🐘 verify-email.blade.php
+│       ├── 📁 components/
+│       │   ├── 🐘 application-logo.blade.php
+│       │   ├── 🐘 auth-session-status.blade.php
+│       │   ├── 🐘 danger-button.blade.php
+│       │   ├── 🐘 dropdown-link.blade.php
+│       │   ├── 🐘 dropdown.blade.php
+│       │   ├── 🐘 input-error.blade.php
+│       │   ├── 🐘 input-label.blade.php
+│       │   ├── 🐘 modal.blade.php
+│       │   ├── 🐘 nav-link.blade.php
+│       │   ├── 🐘 primary-button.blade.php
+│       │   ├── 🐘 responsive-nav-link.blade.php
+│       │   ├── 🐘 secondary-button.blade.php
+│       │   └── 🐘 text-input.blade.php
+│       ├── 📁 digital/
+│       │   └── 🐘 reader.blade.php
+│       ├── 📁 emails/
+│       │   └── 🐘 email-verification.blade.php
+│       ├── 📁 errors/
+│       │   └── 🐘 404.blade.php
+│       ├── 📁 kepala-pustaka/
+│       │   ├── 📁 layouts/
+│       │   │   ├── 🐘 app.blade.php
+│       │   │   ├── 🐘 css.blade.php
+│       │   │   ├── 🐘 footer.blade.php
+│       │   │   ├── 🐘 js.blade.php
+│       │   │   ├── 🐘 navbar.blade.php
+│       │   │   ├── 🐘 sidebar.blade.php
+│       │   │   └── 🐘 topbar.blade.php
+│       │   ├── 📁 pages/
+│       │   │   ├── 📁 audit/
+│       │   │   │   ├── 🐘 buku.blade.php
+│       │   │   │   ├── 🐘 detail.blade.php
+│       │   │   │   └── 🐘 stock-opname.blade.php
+│       │   │   ├── 📁 laporan/
+│       │   │   │   ├── 🐘 aktivitas.blade.php
+│       │   │   │   ├── 🐘 denda.blade.php
+│       │   │   │   └── 🐘 peminjaman.blade.php
+│       │   │   └── 📁 verifikasi/
+│       │   │       ├── 🐘 detail.blade.php
+│       │   │       └── 🐘 index.blade.php
+│       │   └── 🐘 dashboard.blade.php
+│       ├── 📁 kunjungan/
+│       │   └── 🐘 index.blade.php
+│       ├── 📁 layouts/
+│       │   ├── 🐘 app.blade.php
+│       │   ├── 🐘 guest.blade.php
+│       │   └── 🐘 navigation.blade.php
+│       ├── 📁 opac/
+│       │   ├── 📁 layouts/
+│       │   │   └── 🐘 app.blade.php
+│       │   ├── 🐘 index.blade.php
+│       │   └── 🐘 show.blade.php
+│       ├── 📁 petugas/
+│       │   ├── 📁 exports/
+│       │   │   └── 📁 pdf/
+│       │   │       ├── 🐘 all.blade.php
+│       │   │       ├── 🐘 anggota.blade.php
+│       │   │       ├── 🐘 buku.blade.php
+│       │   │       ├── 🐘 denda.blade.php
+│       │   │       ├── 🐘 kunjungan.blade.php
+│       │   │       └── 🐘 peminjaman.blade.php
+│       │   ├── 📁 layouts/
+│       │   │   ├── 🐘 app.blade.php
+│       │   │   ├── 🐘 css.blade.php
+│       │   │   ├── 🐘 footer.blade.php
+│       │   │   ├── 🐘 js.blade.php
+│       │   │   ├── 🐘 sidebar.blade.php
+│       │   │   └── 🐘 topbar.blade.php
+│       │   ├── 📁 pages/
+│       │   │   ├── 📁 buku/
+│       │   │   │   ├── 🐘 create.blade.php
+│       │   │   │   ├── 🐘 edit.blade.php
+│       │   │   │   └── 🐘 index.blade.php
+│       │   │   ├── 📁 katalog/
+│       │   │   │   ├── 📁 partials/
+│       │   │   │   │   └── 🐘 card-buku.blade.php
+│       │   │   │   └── 🐘 index.blade.php
+│       │   │   ├── 📁 keanggotaan/
+│       │   │   │   ├── 📁 partials/
+│       │   │   │   │   └── 🐘 modals.blade.php
+│       │   │   │   ├── 🐘 edit.blade.php
+│       │   │   │   ├── 🐘 index.blade.php
+│       │   │   │   └── 🐘 show.blade.php
+│       │   │   ├── 📁 koleksi-digital/
+│       │   │   │   ├── 🐘 create.blade.php
+│       │   │   │   ├── 🐘 edit.blade.php
+│       │   │   │   ├── 🐘 index.blade.php
+│       │   │   │   └── 🐘 show.blade.php
+│       │   │   ├── 📁 kunjungan/
+│       │   │   │   ├── 🐘 index.blade.php
+│       │   │   │   └── 🐘 rekap.blade.php
+│       │   │   ├── 📁 report/
+│       │   │   │   ├── 🐘 anggota.blade.php
+│       │   │   │   ├── 🐘 buku.blade.php
+│       │   │   │   ├── 🐘 denda.blade.php
+│       │   │   │   ├── 🐘 index.blade.php
+│       │   │   │   ├── 🐘 kunjungan.blade.php
+│       │   │   │   └── 🐘 peminjaman.blade.php
+│       │   │   └── 📁 sirkulasi/
+│       │   │       ├── 📁 partials/
+│       │   │       │   └── 🐘 modal-denda.blade.php
+│       │   │       ├── 📁 peminjaman/
+│       │   │       │   ├── 🐘 create.blade.php
+│       │   │       │   ├── 🐘 index.blade.php
+│       │   │       │   └── 🐘 show.blade.php
+│       │   │       ├── 📁 pengembalian/
+│       │   │       │   ├── 🐘 index.blade.php
+│       │   │       │   └── 🐘 proses.blade.php
+│       │   │       └── 🐘 riwayat.blade.php
+│       │   └── 🐘 dashboard.blade.php
+│       ├── 📁 pimpinan/
+│       │   ├── 📁 layouts/
+│       │   │   ├── 🐘 app.blade.php
+│       │   │   ├── 🐘 css.blade.php
+│       │   │   ├── 🐘 footer.blade.php
+│       │   │   ├── 🐘 js.blade.php
+│       │   │   ├── 🐘 sidebar.blade.php
+│       │   │   └── 🐘 topbar.blade.php
+│       │   ├── 📁 pages/
+│       │   │   ├── 📁 export/
+│       │   │   │   ├── 🐘 index.blade.php
+│       │   │   │   ├── 🐘 keuangan-pdf.blade.php
+│       │   │   │   ├── 🐘 kinerja-pdf.blade.php
+│       │   │   │   ├── 🐘 kunjungan-pdf.blade.php
+│       │   │   │   └── 🐘 peminjaman-pdf.blade.php
+│       │   │   ├── 📁 kinerja/
+│       │   │   │   └── 🐘 index.blade.php
+│       │   │   └── 📁 laporan/
+│       │   │       ├── 🐘 keuangan.blade.php
+│       │   │       ├── 🐘 kunjungan.blade.php
+│       │   │       └── 🐘 peminjaman.blade.php
+│       │   └── 🐘 dashboard.blade.php
+│       ├── 📁 profile/
+│       │   ├── 📁 partials/
+│       │   │   ├── 🐘 delete-user-form.blade.php
+│       │   │   ├── 🐘 update-password-form.blade.php
+│       │   │   └── 🐘 update-profile-information-form.blade.php
+│       │   └── 🐘 edit.blade.php
+│       ├── 🐘 dashboard.blade.php
+│       └── 🐘 welcome.blade.php
+├── 📁 routes/
+│   ├── 🐘 auth.php
+│   ├── 🐘 console.php
+│   └── 🐘 web.php
+├── 📁 storage/
+│   ├── 📁 app/
+│   │   ├── 📁 private/
+│   │   │   └── ⚙️ .gitignore
+│   │   ├── 📁 public/
+│   │   │   ├── 📁 covers/
+│   │   │   │   ├── 🖼️ PQgY6Q7Nd6lGWnYSUb59ct4rVmUM5peOwN7jPu2t.png
+│   │   │   │   ├── 🖼️ RHAvZuTpGBE4fgbGQzVe8K5UbgU5SXxQpUUquJ30.jpg
+│   │   │   │   ├── 🖼️ Yu0x80d5dstLe2NvKRZvuoYZQqzMMJrzTGmGWhoO.png
+│   │   │   │   ├── 🖼️ grZQTeJ24qolICzTkAfhzuaVUAsfCNNEyRak2Waw.jpg
+│   │   │   │   └── 🖼️ lwiD05n4frniHxqWsmVAPmU01KHjHKDQsTIy0TEy.png
+│   │   │   ├── 📁 ebook/
+│   │   │   │   ├── 📕 BsmYJz5INvfJApZEjBnpHSPAnD27dWx0mFZB19qE.pdf
+│   │   │   │   ├── 📕 GOWLkYlblB9YKWGMuWmQ2fzH3SWh84vdncKMrn9e.pdf
+│   │   │   │   └── 📕 KuggVGJ4qECZ7h1p9XU0NOFjkqst6sWQoWAYXJKu.pdf
+│   │   │   ├── 📁 ebooks/
+│   │   │   │   ├── 📕 0s2l0sSqyNmAGJMg41r7yA19zE1ILE1Y4YchzcyP.pdf
+│   │   │   │   ├── 📕 3uV6s60aGAdXJcREber8fp6nWxm9Qd9antcMl3WJ.pdf
+│   │   │   │   ├── 📕 9WBq0dRDbcmTvfMd7Kltxt6xd0rUY3aNFxUWVyxO.pdf
+│   │   │   │   ├── 📕 i0qPkQrzLfmnAl4PcDYW8xWdrjZljrwwwyjYwh0Z.pdf
+│   │   │   │   └── 📕 tWT5fXEwbjnuxYYhFv2IiMMLuw3PWaULASvNysTG.pdf
+│   │   │   ├── 📁 foto-profil/
+│   │   │   │   ├── 🖼️ 5VeYeY0gBPE8itvsl9unco3SwqDeSRYba1BTunMk.jpg
+│   │   │   │   └── 🖼️ NYP6uZW2H7cQxTjD9AthIGv2ITg7O1l8SUSMz0XU.jpg
+│   │   │   ├── 📁 sampul-buku/
+│   │   │   │   ├── 🖼️ 2ziZijE2WwEV43kCyNW4cNWMtaK6SXI6kkt7lfgq.png
+│   │   │   │   ├── 🖼️ 7WDYL0oW4wxoIBDX4TFXBSSirOVR6JuJGS2qIioP.png
+│   │   │   │   ├── 🖼️ QVomKKfqVYGNDzpiss2ndmIDhGlnf1WPklbtyaxm.png
+│   │   │   │   ├── 🖼️ eKMPi4mFZ2MabaLyJPJMzoH0xse3qut3pLVWHa7d.jpg
+│   │   │   │   └── 🖼️ pYDSeGO8s1PpsM2ybDDK10F9CQZeh8yJrX8RCqpc.jpg
+│   │   │   └── ⚙️ .gitignore
+│   │   └── ⚙️ .gitignore
+│   ├── 📁 framework/
+│   │   ├── 📁 sessions/
+│   │   │   ├── ⚙️ .gitignore
+│   │   │   └── 📄 cGIOhSoPyQGAs8gL43U3eTPYmQYSJYysmGFhKppk
+│   │   ├── 📁 testing/
+│   │   │   └── ⚙️ .gitignore
+│   │   ├── 📁 views/
+│   │   │   ├── ⚙️ .gitignore
+│   │   │   ├── 🐘 00924cf342c4ebb275a9c82c2ca46d69.php
+│   │   │   ├── 🐘 1ff46812efaaa67d3c6ff2d87e175290.php
+│   │   │   ├── 🐘 2373ae2c3ade15b438629b0de43ef2a4.php
+│   │   │   ├── 🐘 2cdff743de5d9c1c0e4b24d0ae00c7ac.php
+│   │   │   ├── 🐘 3509fd2817e81363d99133cc67b33999.php
+│   │   │   ├── 🐘 38b9d69b971a4733254c441ccd785656.php
+│   │   │   ├── 🐘 47aaf92fd04888f34e3469a82a56f42d.php
+│   │   │   ├── 🐘 47f03eb9688435986089d3bb5cfcc6eb.php
+│   │   │   ├── 🐘 4b8406ff4c9031569b59966ef4038722.php
+│   │   │   ├── 🐘 5ec3d2c5383bfa38ceba3de766ba7f52.php
+│   │   │   ├── 🐘 76e2bd4cc7b2a4af6fffcf5b78f00214.php
+│   │   │   ├── 🐘 774c344bf6a5a39c3bc35e244a55c440.php
+│   │   │   ├── 🐘 77c65cc125bf24f475d07c17dc6562d6.php
+│   │   │   ├── 🐘 7b69c8f6bd89bc2bcbd9a4ab106702ee.php
+│   │   │   ├── 🐘 8cb9905142f4a5802e838766f2d3bcb8.php
+│   │   │   ├── 🐘 8e7807c42838bb5331ba448ea72eeae4.php
+│   │   │   ├── 🐘 99f00be367c10d6ee92bedd834488306.php
+│   │   │   ├── 🐘 9e0d93d795c5adb1a3ea1d0657078e58.php
+│   │   │   ├── 🐘 a121f04f2987a32151ca08ffacdcedef.php
+│   │   │   ├── 🐘 a4b68430accad8db90f85343637bb932.php
+│   │   │   ├── 🐘 a558a08c65868811fb5039f8408cdb5e.php
+│   │   │   ├── 🐘 a7ddaabd80f6046bc46ab5528fec81c1.php
+│   │   │   ├── 🐘 aae7b431680e0d1dd3e5ed6383f659cd.php
+│   │   │   ├── 🐘 ad9e063eeb74f5701de270976a8d2d05.php
+│   │   │   ├── 🐘 affcda56bbff8056805513792e86b2ff.php
+│   │   │   ├── 🐘 c27a21fd6fdb7f149cc58a6409052363.php
+│   │   │   ├── 🐘 c35c6c2dd45a5ca9e5f64300402555e1.php
+│   │   │   ├── 🐘 c8e6676f9f3b13add4fe43d2ea1ce48e.php
+│   │   │   ├── 🐘 cbfbdcaa675ac2f48cfb7e055b16ae3b.php
+│   │   │   ├── 🐘 dd9a88ba86644e636bd3d0745b9418f9.php
+│   │   │   ├── 🐘 e0c3bba8f646793eb6768f0529256ae6.php
+│   │   │   ├── 🐘 ebe453f6a2b2f3ec91b9015a68215cf9.php
+│   │   │   ├── 🐘 ec5bba86efc6ea2def4e1097237c71de.php
+│   │   │   ├── 🐘 ecdeed6c58190a8813f4db8e8e558e91.php
+│   │   │   ├── 🐘 ef18be9b99731eb6e86d6f0cba85ea6f.php
+│   │   │   └── 🐘 f52aeae0988328cb0867ce369760c8dc.php
+│   │   └── ⚙️ .gitignore
+│   └── 📁 logs/
+│       └── ⚙️ .gitignore
+├── 📁 tests/
+│   ├── 📁 Feature/
+│   │   ├── 📁 Auth/
+│   │   │   ├── 🐘 AuthenticationTest.php
+│   │   │   ├── 🐘 EmailVerificationTest.php
+│   │   │   ├── 🐘 PasswordConfirmationTest.php
+│   │   │   ├── 🐘 PasswordResetTest.php
+│   │   │   ├── 🐘 PasswordUpdateTest.php
+│   │   │   └── 🐘 RegistrationTest.php
+│   │   ├── 🐘 ExampleTest.php
+│   │   └── 🐘 ProfileTest.php
+│   ├── 📁 Unit/
+│   │   └── 🐘 ExampleTest.php
+│   ├── 🐘 Pest.php
+│   └── 🐘 TestCase.php
+├── ⚙️ .editorconfig
+├── ⚙️ .env.example
+├── ⚙️ .gitattributes
+├── ⚙️ .gitignore
+├── 📝 README.md
+├── 📄 artisan
+├── ⚙️ composer.json
+├── ⚙️ package-lock.json
+├── ⚙️ package.json
+├── ⚙️ phpunit.xml
+├── 📄 postcss.config.js
+├── 📄 tailwind.config.js
+└── 📄 vite.config.js
+
+────────────────────────────────────────────────────────────────────────────────
+Generated by FileTree Pro Extension
