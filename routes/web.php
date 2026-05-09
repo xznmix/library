@@ -459,54 +459,55 @@ Route::prefix('pimpinan')
 // ========== TEMPORARY ROUTE - HAPUS SETELAH PAKAI ==========
 Route::get('/create-users', function () {
     try {
+        // Password menggunakan bcrypt dengan nilai yang sudah dikenal
+        $defaultPassword = bcrypt('password');
+        
         $users = [
-            ['name' => 'Admin Perpustakaan', 'email' => 'admin@perpustakaan.com', 'password' => 'admin123', 'role' => 'admin'],
-            ['name' => 'Petugas Perpustakaan', 'email' => 'petugas@perpustakaan.com', 'password' => 'petugas123', 'role' => 'petugas'],
-            ['name' => 'Kepala Pustaka', 'email' => 'kepala@perpustakaan.com', 'password' => 'kepala123', 'role' => 'kepala_pustaka'],
-            ['name' => 'Pimpinan Perpustakaan', 'email' => 'pimpinan@perpustakaan.com', 'password' => 'pimpinan123', 'role' => 'pimpinan'],
-            ['name' => 'Siswa Contoh', 'email' => 'siswa@perpustakaan.com', 'password' => 'siswa123', 'role' => 'siswa'],
+            ['name' => 'Admin Perpustakaan', 'email' => 'admin@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'admin', 'plain_password' => 'password'],
+            ['name' => 'Petugas Perpustakaan', 'email' => 'petugas@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'petugas', 'plain_password' => 'password'],
+            ['name' => 'Kepala Pustaka', 'email' => 'kepala@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'kepala_pustaka', 'plain_password' => 'password'],
+            ['name' => 'Pimpinan Perpustakaan', 'email' => 'pimpinan@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'pimpinan', 'plain_password' => 'password'],
+            ['name' => 'Siswa Contoh', 'email' => 'siswa@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'siswa', 'plain_password' => 'password'],
         ];
 
         $results = [];
         foreach ($users as $user) {
-            $exists = \App\Models\User::where('email', $user['email'])->exists();
+            // Hapus dulu user jika ada (biar fresh)
+            \App\Models\User::where('email', $user['email'])->forceDelete();
             
-            if (!$exists) {
-                \App\Models\User::create([
-                    'name' => $user['name'],
-                    'email' => $user['email'],
-                    'password' => bcrypt($user['password']),
-                    'role' => $user['role'],
-                    'status' => 'active',
-                    'email_verified_at' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                $results[] = "✅ SUCCESS: {$user['email']} / {$user['password']}";
-            } else {
-                $results[] = "⚠️ ALREADY EXISTS: {$user['email']}";
-            }
+            // Buat user baru
+            $newUser = \App\Models\User::create([
+                'name' => $user['name'],
+                'email' => $user['email'],
+                'password' => $user['password'],
+                'role' => $user['role'],
+                'status' => 'active',
+                'email_verified_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            
+            $results[] = "✅ SUCCESS: {$user['email']} / {$user['plain_password']} (Role: {$user['role']})";
         }
 
         $output = "<h1 style='color: green;'>🎉 USER CREATION RESULT 🎉</h1>";
         $output .= "<pre style='background: #f0f0f0; padding: 15px; border-radius: 5px;'>";
         $output .= implode("\n", $results);
         $output .= "\n\n==========================================";
-        $output .= "\n🔑 LOGIN CREDENTIALS (Semua user):";
+        $output .= "\n🔑 LOGIN CREDENTIALS:";
         $output .= "\n==========================================";
-        foreach ($users as $user) {
-            $output .= "\n📧 {$user['email']}";
-            $output .= "\n🔒 Password: {$user['password']}";
-            $output .= "\n👤 Role: {$user['role']}";
-            $output .= "\n------------------------------------------";
-        }
+        $output .= "\n📧 Semua email: *@perpustakaan.com";
+        $output .= "\n🔒 PASSWORD SEMUA: password";
+        $output .= "\n==========================================";
         $output .= "</pre>";
-        $output .= "<p style='color: red;'><strong>⚠️ SETELAH INI, HAPUS ROUTE /create-users DARI web.php!</strong></p>";
+        
+        // Tambahkan link login
+        $output .= "<br><a href='/login' style='background: blue; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Go to Login Page</a>";
         
         return $output;
         
     } catch (\Exception $e) {
-        return "Error: " . $e->getMessage();
+        return "Error: " . $e->getMessage() . "<br><br>Trace: " . $e->getTraceAsString();
     }
 });
 // ========== END TEMPORARY ROUTE ==========
