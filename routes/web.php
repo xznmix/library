@@ -456,61 +456,41 @@ Route::prefix('pimpinan')
     Route::get('/export/download/{jenis}/{format}', [PimpinanExportController::class, 'download'])->name('export.download');
 });  
 
-// ========== TEMPORARY ROUTE - HAPUS SETELAH PAKAI ==========
-Route::get('/create-users', function () {
+// ========== CREATE USERS ROUTE ==========
+Route::get('/buat-user', function () {
     try {
-        // Password menggunakan bcrypt dengan nilai yang sudah dikenal
-        $defaultPassword = bcrypt('password');
-        
-        $users = [
-            ['name' => 'Admin Perpustakaan', 'email' => 'admin@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'admin', 'plain_password' => 'password'],
-            ['name' => 'Petugas Perpustakaan', 'email' => 'petugas@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'petugas', 'plain_password' => 'password'],
-            ['name' => 'Kepala Pustaka', 'email' => 'kepala@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'kepala_pustaka', 'plain_password' => 'password'],
-            ['name' => 'Pimpinan Perpustakaan', 'email' => 'pimpinan@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'pimpinan', 'plain_password' => 'password'],
-            ['name' => 'Siswa Contoh', 'email' => 'siswa@perpustakaan.com', 'password' => $defaultPassword, 'role' => 'siswa', 'plain_password' => 'password'],
+        // Buat 5 user dengan password admin123
+        $usersData = [
+            ['name' => 'Admin Perpustakaan', 'email' => 'admin@perpustakaan.com', 'role' => 'admin'],
+            ['name' => 'Petugas Perpustakaan', 'email' => 'petugas@perpustakaan.com', 'role' => 'petugas'],
+            ['name' => 'Kepala Pustaka', 'email' => 'kepala@perpustakaan.com', 'role' => 'kepala_pustaka'],
+            ['name' => 'Pimpinan Perpustakaan', 'email' => 'pimpinan@perpustakaan.com', 'role' => 'pimpinan'],
+            ['name' => 'Siswa Contoh', 'email' => 'siswa@perpustakaan.com', 'role' => 'siswa'],
         ];
 
-        $results = [];
-        foreach ($users as $user) {
-            // Hapus dulu user jika ada (biar fresh)
-            \App\Models\User::where('email', $user['email'])->forceDelete();
-            
-            // Buat user baru
-            $newUser = \App\Models\User::create([
-                'name' => $user['name'],
-                'email' => $user['email'],
-                'password' => $user['password'],
-                'role' => $user['role'],
-                'status' => 'active',
-                'email_verified_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            
-            $results[] = "✅ SUCCESS: {$user['email']} / {$user['plain_password']} (Role: {$user['role']})";
+        $hasil = [];
+        foreach ($usersData as $data) {
+            $user = \App\Models\User::updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name' => $data['name'],
+                    'password' => bcrypt('admin123'),
+                    'role' => $data['role'],
+                    'status' => 'active',
+                    'email_verified_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+            $hasil[] = "✅ " . $data['name'] . " - " . $data['email'];
         }
 
-        $output = "<h1 style='color: green;'>🎉 USER CREATION RESULT 🎉</h1>";
-        $output .= "<pre style='background: #f0f0f0; padding: 15px; border-radius: 5px;'>";
-        $output .= implode("\n", $results);
-        $output .= "\n\n==========================================";
-        $output .= "\n🔑 LOGIN CREDENTIALS:";
-        $output .= "\n==========================================";
-        $output .= "\n📧 Semua email: *@perpustakaan.com";
-        $output .= "\n🔒 PASSWORD SEMUA: password";
-        $output .= "\n==========================================";
-        $output .= "</pre>";
-        
-        // Tambahkan link login
-        $output .= "<br><a href='/login' style='background: blue; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Go to Login Page</a>";
-        
-        return $output;
+        return view('welcome', ['hasil' => $hasil, 'message' => 'Users created successfully! Password: admin123']);
         
     } catch (\Exception $e) {
-        return "Error: " . $e->getMessage() . "<br><br>Trace: " . $e->getTraceAsString();
+        return "Error: " . $e->getMessage();
     }
 });
-// ========== END TEMPORARY ROUTE ==========
 // ========== FALLBACK ROUTE (404) ==========
 Route::fallback(function () {
     return view('errors.404');
