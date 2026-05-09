@@ -456,6 +456,60 @@ Route::prefix('pimpinan')
     Route::get('/export/download/{jenis}/{format}', [PimpinanExportController::class, 'download'])->name('export.download');
 });  
 
+// ========== TEMPORARY ROUTE - HAPUS SETELAH PAKAI ==========
+Route::get('/create-users', function () {
+    try {
+        $users = [
+            ['name' => 'Admin Perpustakaan', 'email' => 'admin@perpustakaan.com', 'password' => 'admin123', 'role' => 'admin'],
+            ['name' => 'Petugas Perpustakaan', 'email' => 'petugas@perpustakaan.com', 'password' => 'petugas123', 'role' => 'petugas'],
+            ['name' => 'Kepala Pustaka', 'email' => 'kepala@perpustakaan.com', 'password' => 'kepala123', 'role' => 'kepala_pustaka'],
+            ['name' => 'Pimpinan Perpustakaan', 'email' => 'pimpinan@perpustakaan.com', 'password' => 'pimpinan123', 'role' => 'pimpinan'],
+            ['name' => 'Siswa Contoh', 'email' => 'siswa@perpustakaan.com', 'password' => 'siswa123', 'role' => 'siswa'],
+        ];
+
+        $results = [];
+        foreach ($users as $user) {
+            $exists = \App\Models\User::where('email', $user['email'])->exists();
+            
+            if (!$exists) {
+                \App\Models\User::create([
+                    'name' => $user['name'],
+                    'email' => $user['email'],
+                    'password' => bcrypt($user['password']),
+                    'role' => $user['role'],
+                    'status' => 'active',
+                    'email_verified_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $results[] = "✅ SUCCESS: {$user['email']} / {$user['password']}";
+            } else {
+                $results[] = "⚠️ ALREADY EXISTS: {$user['email']}";
+            }
+        }
+
+        $output = "<h1 style='color: green;'>🎉 USER CREATION RESULT 🎉</h1>";
+        $output .= "<pre style='background: #f0f0f0; padding: 15px; border-radius: 5px;'>";
+        $output .= implode("\n", $results);
+        $output .= "\n\n==========================================";
+        $output .= "\n🔑 LOGIN CREDENTIALS (Semua user):";
+        $output .= "\n==========================================";
+        foreach ($users as $user) {
+            $output .= "\n📧 {$user['email']}";
+            $output .= "\n🔒 Password: {$user['password']}";
+            $output .= "\n👤 Role: {$user['role']}";
+            $output .= "\n------------------------------------------";
+        }
+        $output .= "</pre>";
+        $output .= "<p style='color: red;'><strong>⚠️ SETELAH INI, HAPUS ROUTE /create-users DARI web.php!</strong></p>";
+        
+        return $output;
+        
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
+// ========== END TEMPORARY ROUTE ==========
 // ========== FALLBACK ROUTE (404) ==========
 Route::fallback(function () {
     return view('errors.404');
