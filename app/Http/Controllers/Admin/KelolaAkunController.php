@@ -19,7 +19,7 @@ use App\Models\PoinAnggota;
 use App\Models\BacaDiTempat;
 use App\Models\StockOpnameLog;
 use App\Models\ActivityLog;
-use App\Models\Anggota;  // ← Model Anggota (tabel: anggota)
+use App\Models\Anggota;
 use App\Imports\UsersImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -189,60 +189,29 @@ class KelolaAkunController extends Controller
         try {
             DB::beginTransaction();
             
-            // PERBAIKAN: Hapus data dari semua tabel yang memiliki foreign key ke users
-            
-            // 1. Hapus data digital access logs (harus sebelum peminjaman digital)
+            // Hapus data dari semua tabel yang memiliki foreign key ke users
             DigitalAccessLog::where('user_id', $user->id)->delete();
-            
-            // 2. Hapus data peminjaman digital
             PeminjamanDigital::where('user_id', $user->id)->delete();
-            
-            // 3. Hapus data peminjaman logs (harus sebelum peminjaman)
             PeminjamanLog::where('user_id', $user->id)->delete();
-            
-            // 4. Hapus data peminjaman buku
             Peminjaman::where('user_id', $user->id)->delete();
-            
-            // 5. Hapus data denda
             Denda::where('id_anggota', $user->id)->delete();
-            
-            // 6. Hapus data kunjungan
             Kunjungan::where('user_id', $user->id)->delete();
-            
-            // 7. Hapus data booking
             Booking::where('user_id', $user->id)->delete();
-            
-            // 8. Hapus data notifikasi (dua tabel)
             Notification::where('user_id', $user->id)->delete();
             Notifikasi::where('user_id', $user->id)->delete();
-            
-            // 9. Hapus data ulasan/rating
             UlasanBuku::where('user_id', $user->id)->delete();
-            
-            // 10. Hapus data favorit buku
             FavoritBuku::where('user_id', $user->id)->delete();
-            
-            // 11. Hapus data poin anggota
             PoinAnggota::where('user_id', $user->id)->delete();
-            
-            // 12. Hapus data baca di tempat
             BacaDiTempat::where('anggota_id', $user->id)->delete();
-            
-            // 13. Hapus data stock opname logs
             StockOpnameLog::where('user_id', $user->id)->delete();
-            
-            // 14. Hapus data activity logs
             ActivityLog::where('user_id', $user->id)->delete();
-            
-            // 15. Hapus data anggota - PERBAIKAN: Gunakan tabel 'anggota' bukan 'anggotas'
-            // Model Anggota menggunakan tabel 'anggota'
             Anggota::where('user_id', $user->id)->delete();
             
-            // 16. Update referensi approved_by, processed_by, dll menjadi null
+            // Update referensi
             User::where('approved_by', $user->id)->update(['approved_by' => null]);
             User::where('processed_by', $user->id)->update(['processed_by' => null]);
             
-            // 17. Hapus user
+            // Hapus user
             $user->delete();
             
             DB::commit();
@@ -260,22 +229,42 @@ class KelolaAkunController extends Controller
      */
     public function import(Request $request)
     {
+        // Log untuk debugging
+        Log::info('Import function called', [
+            'all_files' => $request->allFiles(),
+            'has_file' => $request->hasFile('excel_file'),
+            'method' => $request->method(),
+        ]);
+        
         $request->validate([
             'excel_file' => 'required|mimes:xlsx,xls,csv|max:10240'
         ]);
 
         try {
+            $file = $request->file('excel_file');
+            
+            Log::info('File details', [
+                'name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'extension' => $file->getClientOriginalExtension(),
+                'mime' => $file->getMimeType()
+            ]);
+            
             $import = new UsersImport;
-            Excel::import($import, $request->file('excel_file'));
+            Excel::import($import, $file);
             
             $imported = $import->getRowCount();
             $skipped = $import->getSkippedCount();
             
+            Log::info('Import completed', [
+                'imported' => $imported,
+                'skipped' => $skipped
+            ]);
+            
             if ($imported > 0) {
                 $message = "✅ {$imported} data berhasil diimport!";
-                
                 if ($skipped > 0) {
-                    $message .= "<br>⚠️ {$skipped} data dilewati (NISN/NIK sudah ada atau data tidak valid).";
+                    $message .= " ⚠️ {$skipped} data dilewati (NISN/NIK sudah ada atau data tidak valid).";
                 }
                 
                 return redirect()
@@ -293,10 +282,12 @@ class KelolaAkunController extends Controller
             foreach ($failures as $failure) {
                 $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
             }
+            Log::error('Validation errors: ', $errorMessages);
             return redirect()->back()->with('error', 'Validasi gagal:<br>' . implode('<br>', array_slice($errorMessages, 0, 10)));
                     
         } catch (\Exception $e) {
             Log::error('Import error: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
             return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
@@ -320,49 +311,43 @@ class KelolaAkunController extends Controller
     }
 
     /**
-     * Download template for import (dengan contoh data real dari database)
+     * Download template for import (CSV format - works for all users)
      */
     public function downloadTemplate()
     {
-        $headers = ['nisn_nik', 'name', 'email', 'role', 'no_anggota', 'kelas', 'phone'];
+        $headers = ['nisn_nik', 'name', 'email', 'role', 'kelas', 'phone', 'address'];
         
-        // Ambil beberapa data real dari database sebagai contoh
-        $sampleUsers = User::whereIn('role', ['siswa', 'guru', 'pegawai', 'umum'])
-            ->limit(5)
-            ->get()
-            ->map(function($user) {
-                return [
-                    $user->nisn_nik,
-                    $user->name,
-                    $user->email,
-                    $user->role,
-                    $user->no_anggota ?? '',
-                    $user->kelas ?? '',
-                    $user->phone ?? '',
-                ];
-            });
+        // Data contoh yang valid
+        $sampleData = [
+            ['12345678', 'Andi Wijaya', 'andi@perpustakaan.com', 'siswa', 'X IPA 1', '081234567890', 'Jl. Pendidikan No. 1'],
+            ['87654321', 'Budi Santoso', 'budi@perpustakaan.com', 'guru', '', '081234567891', ''],
+            ['11223344', 'Citra Dewi', 'citra@perpustakaan.com', 'pegawai', '', '081234567892', ''],
+            ['44332211', 'Dewi Putri', 'dewi@perpustakaan.com', 'umum', '', '081234567893', ''],
+            ['55667788', 'Eka Prasetya', 'eka@perpustakaan.com', 'siswa', 'XII IPA 2', '081234567894', 'Jl. Mawar No. 5'],
+            ['99887766', 'Fajar Nugroho', 'fajar@perpustakaan.com', 'guru', '', '081234567895', ''],
+        ];
         
-        // Jika tidak ada data, pakai contoh default
-        if ($sampleUsers->isEmpty()) {
-            $sampleUsers = collect([
-                ['12345678', 'Andi Wijaya', 'andi@email.com', 'siswa', 'SIS2401001', 'X IPA 1', '08123456789'],
-                ['87654321', 'Budi Santoso', 'budi@email.com', 'guru', 'GRU2401001', '', '08123456788'],
-            ]);
-        }
+        // Buat response CSV
+        $callback = function() use ($headers, $sampleData) {
+            $file = fopen('php://output', 'w');
+            
+            // Add BOM for UTF-8 (fixes Excel opening issue)
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Write headers
+            fputcsv($file, $headers);
+            
+            // Write sample data
+            foreach ($sampleData as $row) {
+                fputcsv($file, $row);
+            }
+            
+            fclose($file);
+        };
         
-        $tempFile = tempnam(sys_get_temp_dir(), 'template_') . '.csv';
-        $handle = fopen($tempFile, 'w');
-        
-        // Write headers
-        fputcsv($handle, $headers);
-        
-        // Write sample data
-        foreach ($sampleUsers as $row) {
-            fputcsv($handle, $row);
-        }
-        
-        fclose($handle);
-        
-        return response()->download($tempFile, 'template_import_user.csv')->deleteFileAfterSend(true);
+        return response()->streamDownload($callback, 'template_import_user.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="template_import_user.csv"',
+        ]);
     }
 }
