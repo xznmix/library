@@ -423,16 +423,67 @@
                                placeholder="Contoh: 250">
                     </div>
 
-                    {{-- DIMENSI --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Dimensi / Ukuran
+                    {{-- DIMENSI / UKURAN - VERSION 2 KOLOM (EDIT) --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Dimensi / Ukuran <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" 
-                               name="ukuran" 
-                               value="{{ old('ukuran', $buku->ukuran) }}"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200"
-                               placeholder="Contoh: 15 x 23 cm">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {{-- Dropdown Pilihan Standar --}}
+                            <div>
+                                <select id="ukuranSelect" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
+                                    <option value="">-- Pilih Ukuran Standar --</option>
+                                    <option value="A4 (21 x 29,7 cm)" {{ old('ukuran', $buku->ukuran) == 'A4 (21 x 29,7 cm)' ? 'selected' : '' }}>📄 A4 (21 x 29,7 cm)</option>
+                                    <option value="B5 (17,6 x 25 cm)" {{ old('ukuran', $buku->ukuran) == 'B5 (17,6 x 25 cm)' ? 'selected' : '' }}>📘 B5 (17,6 x 25 cm)</option>
+                                    <option value="A5 (14,8 x 21 cm)" {{ old('ukuran', $buku->ukuran) == 'A5 (14,8 x 21 cm)' ? 'selected' : '' }}>📖 A5 (14,8 x 21 cm)</option>
+                                    <option value="UNESCO (15,5 x 23 cm)" {{ old('ukuran', $buku->ukuran) == 'UNESCO (15,5 x 23 cm)' ? 'selected' : '' }}>📚 UNESCO (15,5 x 23 cm)</option>
+                                    <option value="F4 (21 x 33 cm)" {{ old('ukuran', $buku->ukuran) == 'F4 (21 x 33 cm)' ? 'selected' : '' }}>📋 F4 (21 x 33 cm)</option>
+                                    <option value="Pocket (13 x 19 cm)" {{ old('ukuran', $buku->ukuran) == 'Pocket (13 x 19 cm)' ? 'selected' : '' }}>👝 Pocket (13 x 19 cm)</option>
+                                    <option value="Pocket (13 x 20 cm)" {{ old('ukuran', $buku->ukuran) == 'Pocket (13 x 20 cm)' ? 'selected' : '' }}>👝 Pocket (13 x 20 cm)</option>
+                                    <option value="custom" {{ old('ukuran', $buku->ukuran) && !in_array(old('ukuran', $buku->ukuran), ['', 'A4 (21 x 29,7 cm)', 'B5 (17,6 x 25 cm)', 'A5 (14,8 x 21 cm)', 'UNESCO (15,5 x 23 cm)', 'F4 (21 x 33 cm)', 'Pocket (13 x 19 cm)', 'Pocket (13 x 20 cm)']) ? 'selected' : '' }}>✏️ Custom - Isi sendiri</option>
+                                </select>
+                            </div>
+                            
+                            {{-- Kolom Custom Input (Awalnya hidden) --}}
+                            <div id="customUkuranContainer" class="hidden md:col-span-2">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">Panjang (cm)</label>
+                                        <input type="number" 
+                                            id="panjangInput"
+                                            step="0.1"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200"
+                                            placeholder="Contoh: 21">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">Lebar (cm)</label>
+                                        <input type="number" 
+                                            id="lebarInput"
+                                            step="0.1"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200"
+                                            placeholder="Contoh: 29,7">
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-1">⚠️ Gunakan titik untuk desimal (contoh: 29.7)</p>
+                            </div>
+                        </div>
+                        
+                        {{-- Hidden Input untuk nilai akhir --}}
+                        <input type="hidden" name="ukuran" id="ukuranHidden" value="{{ old('ukuran', $buku->ukuran) }}">
+                        
+                        {{-- Preview Ukuran --}}
+                        <div id="ukuranPreview" class="mt-2 text-sm text-indigo-600 font-medium {{ old('ukuran', $buku->ukuran) ? '' : 'hidden' }}">
+                            📏 Ukuran yang dipilih: <span id="selectedUkuran">{{ old('ukuran', $buku->ukuran) }}</span>
+                        </div>
+                        
+                        <p class="text-xs text-gray-500 mt-2">
+                            💡 <span class="font-medium">Petunjuk:</span> Pilih ukuran standar dari dropdown, atau pilih "Custom" untuk memasukkan ukuran sendiri (panjang x lebar dalam cm)
+                        </p>
+                        @error('ukuran')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     {{-- ISBN --}}

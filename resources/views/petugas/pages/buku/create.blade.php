@@ -55,7 +55,7 @@
         @csrf
 
         {{-- ============================================================ --}}
-        {{-- SECTION 1: DATA EKSEMPLAR (TANPA SCAN BARCODE) --}}
+        {{-- SECTION 1: DATA EKSEMPLAR --}}
         {{-- ============================================================ --}}
         <div class="border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4">
             <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -140,7 +140,7 @@
                     <p class="text-xs text-gray-400 mt-1">Jumlah eksemplar</p>
                 </div>
 
-                {{-- JENIS SUMBER (LENGKAP) --}}
+                {{-- JENIS SUMBER --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                         Jenis Sumber 
@@ -212,7 +212,7 @@
                     </select>
                 </div>
 
-                {{-- KATEGORI BUKU (dari tabel kategori) --}}
+                {{-- KATEGORI BUKU --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                         Kategori Buku <span class="text-red-500">*</span>
@@ -266,7 +266,7 @@
                     </select>
                 </div>
 
-                {{-- DENDA PER HARI (OTOMATIS 500) --}}
+                {{-- DENDA PER HARI --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                         Denda per Hari
@@ -423,16 +423,67 @@
                            placeholder="Contoh: 250">
                 </div>
 
-                {{-- DIMENSI --}}
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Dimensi / Ukuran
+                {{-- DIMENSI / UKURAN - VERSION 2 KOLOM --}}
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Dimensi / Ukuran <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" 
-                           name="ukuran" 
-                           value="{{ old('ukuran') }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200"
-                           placeholder="Contoh: 15 x 23 cm">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {{-- Dropdown Pilihan Standar --}}
+                        <div>
+                            <select id="ukuranSelect" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500">
+                                <option value="">-- Pilih Ukuran Standar --</option>
+                                <option value="A4 (21 x 29,7 cm)" {{ old('ukuran') == 'A4 (21 x 29,7 cm)' ? 'selected' : '' }}>📄 A4 (21 x 29,7 cm)</option>
+                                <option value="B5 (17,6 x 25 cm)" {{ old('ukuran') == 'B5 (17,6 x 25 cm)' ? 'selected' : '' }}>📘 B5 (17,6 x 25 cm)</option>
+                                <option value="A5 (14,8 x 21 cm)" {{ old('ukuran') == 'A5 (14,8 x 21 cm)' ? 'selected' : '' }}>📖 A5 (14,8 x 21 cm)</option>
+                                <option value="UNESCO (15,5 x 23 cm)" {{ old('ukuran') == 'UNESCO (15,5 x 23 cm)' ? 'selected' : '' }}>📚 UNESCO (15,5 x 23 cm)</option>
+                                <option value="F4 (21 x 33 cm)" {{ old('ukuran') == 'F4 (21 x 33 cm)' ? 'selected' : '' }}>📋 F4 (21 x 33 cm)</option>
+                                <option value="Pocket (13 x 19 cm)" {{ old('ukuran') == 'Pocket (13 x 19 cm)' ? 'selected' : '' }}>👝 Pocket (13 x 19 cm)</option>
+                                <option value="Pocket (13 x 20 cm)" {{ old('ukuran') == 'Pocket (13 x 20 cm)' ? 'selected' : '' }}>👝 Pocket (13 x 20 cm)</option>
+                                <option value="custom" {{ old('ukuran') && !in_array(old('ukuran'), ['', 'A4 (21 x 29,7 cm)', 'B5 (17,6 x 25 cm)', 'A5 (14,8 x 21 cm)', 'UNESCO (15,5 x 23 cm)', 'F4 (21 x 33 cm)', 'Pocket (13 x 19 cm)', 'Pocket (13 x 20 cm)']) ? 'selected' : '' }}>✏️ Custom - Isi sendiri</option>
+                            </select>
+                        </div>
+                        
+                        {{-- Kolom Custom Input (Awalnya hidden) --}}
+                        <div id="customUkuranContainer" class="hidden md:col-span-2">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Panjang (cm)</label>
+                                    <input type="number" 
+                                        id="panjangInput"
+                                        step="0.1"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200"
+                                        placeholder="Contoh: 21">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Lebar (cm)</label>
+                                    <input type="number" 
+                                        id="lebarInput"
+                                        step="0.1"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200"
+                                        placeholder="Contoh: 29,7">
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">⚠️ Gunakan titik untuk desimal (contoh: 29.7)</p>
+                        </div>
+                    </div>
+                    
+                    {{-- Hidden Input untuk nilai akhir --}}
+                    <input type="hidden" name="ukuran" id="ukuranHidden" value="{{ old('ukuran') }}">
+                    
+                    {{-- Preview Ukuran --}}
+                    <div id="ukuranPreview" class="mt-2 text-sm text-indigo-600 font-medium {{ old('ukuran') ? '' : 'hidden' }}">
+                        📏 Ukuran yang dipilih: <span id="selectedUkuran">{{ old('ukuran') }}</span>
+                    </div>
+                    
+                    <p class="text-xs text-gray-500 mt-2">
+                        💡 <span class="font-medium">Petunjuk:</span> Pilih ukuran standar dari dropdown, atau pilih "Custom" untuk memasukkan ukuran sendiri (panjang x lebar dalam cm)
+                    </p>
+                    @error('ukuran')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- ISBN --}}
@@ -727,6 +778,191 @@ if (jenisKoleksi) {
     toggleLisensiSection();
 }
 
+// ============================================
+// HANDLE CUSTOM DIMENSI / UKURAN - 2 KOLOM
+// ============================================
+const ukuranSelect = document.getElementById('ukuranSelect');
+const customContainer = document.getElementById('customUkuranContainer');
+const panjangInput = document.getElementById('panjangInput');
+const lebarInput = document.getElementById('lebarInput');
+const ukuranHidden = document.getElementById('ukuranHidden');
+const ukuranPreview = document.getElementById('ukuranPreview');
+const selectedUkuranSpan = document.getElementById('selectedUkuran');
+
+/**
+ * Format ukuran dari panjang dan lebar
+ */
+function formatUkuran(panjang, lebar) {
+    if (!panjang && !lebar) return '';
+    const p = panjang ? parseFloat(panjang).toString() : '';
+    const l = lebar ? parseFloat(lebar).toString() : '';
+    
+    if (p && l) {
+        return `${p} x ${l} cm`;
+    } else if (p) {
+        return `${p} cm`;
+    } else if (l) {
+        return `${l} cm`;
+    }
+    return '';
+}
+
+/**
+ * Update hidden input dan preview dari custom fields
+ */
+function updateFromCustomFields() {
+    const panjang = panjangInput ? panjangInput.value : '';
+    const lebar = lebarInput ? lebarInput.value : '';
+    const ukuranValue = formatUkuran(panjang, lebar);
+    
+    if (ukuranHidden) ukuranHidden.value = ukuranValue;
+    if (selectedUkuranSpan) selectedUkuranSpan.textContent = ukuranValue;
+    
+    // Tampilkan preview jika ada nilai
+    if (ukuranPreview && ukuranValue) {
+        ukuranPreview.classList.remove('hidden');
+    } else if (ukuranPreview) {
+        ukuranPreview.classList.add('hidden');
+    }
+}
+
+/**
+ * Update custom fields dari nilai yang ada
+ */
+function updateCustomFieldsFromValue(ukuranValue) {
+    if (!ukuranValue) return;
+    
+    // Parse format "21 x 29.7 cm" atau "21 x 29,7 cm"
+    const match = ukuranValue.match(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/i);
+    
+    if (match) {
+        let panjang = match[1].replace(',', '.');
+        let lebar = match[2].replace(',', '.');
+        
+        if (panjangInput) panjangInput.value = panjang;
+        if (lebarInput) lebarInput.value = lebar;
+    } else {
+        // Coba parse angka pertama saja
+        const numMatch = ukuranValue.match(/(\d+(?:[.,]\d+)?)/);
+        if (numMatch && panjangInput) {
+            panjangInput.value = numMatch[1].replace(',', '.');
+        }
+    }
+}
+
+/**
+ * Toggle visibility custom container
+ */
+function toggleCustomContainer() {
+    if (!ukuranSelect) return;
+    
+    const isCustom = ukuranSelect.value === 'custom';
+    
+    if (customContainer) {
+        if (isCustom) {
+            customContainer.classList.remove('hidden');
+            customContainer.classList.add('grid');
+            
+            // Set required untuk custom fields
+            if (panjangInput) panjangInput.required = true;
+            if (lebarInput) lebarInput.required = true;
+            
+            // Jika hidden sudah punya nilai, isi ke custom fields
+            if (ukuranHidden && ukuranHidden.value && !panjangInput.value && !lebarInput.value) {
+                updateCustomFieldsFromValue(ukuranHidden.value);
+            }
+            
+            // Update preview dari custom fields
+            updateFromCustomFields();
+        } else {
+            customContainer.classList.add('hidden');
+            customContainer.classList.remove('grid');
+            
+            // Remove required dari custom fields
+            if (panjangInput) panjangInput.required = false;
+            if (lebarInput) lebarInput.required = false;
+            
+            // Update hidden dari select value
+            if (ukuranHidden) {
+                ukuranHidden.value = ukuranSelect.value;
+                if (selectedUkuranSpan) selectedUkuranSpan.textContent = ukuranSelect.value;
+                if (ukuranPreview && ukuranSelect.value) {
+                    ukuranPreview.classList.remove('hidden');
+                } else if (ukuranPreview) {
+                    ukuranPreview.classList.add('hidden');
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Sync existing value from hidden input to select/custom fields
+ */
+function syncExistingValue() {
+    if (!ukuranSelect || !ukuranHidden) return;
+    
+    const existingValue = ukuranHidden.value;
+    
+    if (!existingValue || existingValue === '') {
+        return;
+    }
+    
+    // Cek apakah nilai existing ada di option select
+    const optionExists = Array.from(ukuranSelect.options).some(opt => opt.value === existingValue);
+    
+    if (optionExists) {
+        // Nilai ada di option, pilih option tersebut
+        ukuranSelect.value = existingValue;
+        toggleCustomContainer();
+    } else if (existingValue !== 'custom') {
+        // Nilai tidak ada di option, set ke custom dan isi fields
+        ukuranSelect.value = 'custom';
+        toggleCustomContainer();
+        updateCustomFieldsFromValue(existingValue);
+        updateFromCustomFields();
+    } else {
+        ukuranSelect.value = 'custom';
+        toggleCustomContainer();
+    }
+}
+
+// Event Listeners
+if (ukuranSelect) {
+    ukuranSelect.addEventListener('change', function() {
+        toggleCustomContainer();
+    });
+}
+
+if (panjangInput) {
+    panjangInput.addEventListener('input', function() {
+        updateFromCustomFields();
+    });
+}
+
+if (lebarInput) {
+    lebarInput.addEventListener('input', function() {
+        updateFromCustomFields();
+    });
+}
+
+// Inisialisasi saat DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    toggleCustomContainer();
+    syncExistingValue();
+});
+
+// Inisialisasi langsung juga untuk berjaga-jaga
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleCustomContainer();
+        syncExistingValue();
+    });
+} else {
+    toggleCustomContainer();
+    syncExistingValue();
+}
+
 // Validasi ISBN format
 document.getElementById('isbn')?.addEventListener('blur', function() {
     let isbn = this.value.replace(/[-\s]/g, '');
@@ -738,23 +974,6 @@ document.getElementById('isbn')?.addEventListener('blur', function() {
         this.style.backgroundColor = '';
     }
 });
-
-// Show alert function
-function showAlert(message, type = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `fixed top-20 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 ${
-        type === 'success' ? 'bg-green-500' : 
-        type === 'error' ? 'bg-red-500' : 
-        'bg-blue-500'
-    } text-white`;
-    alertDiv.textContent = message;
-    document.body.appendChild(alertDiv);
-    
-    setTimeout(() => {
-        alertDiv.style.opacity = '0';
-        setTimeout(() => alertDiv.remove(), 300);
-    }, 3000);
-}
 
 // Form submission loading
 document.getElementById('formBuku')?.addEventListener('submit', function() {
@@ -784,6 +1003,11 @@ input:focus, select:focus, textarea:focus {
 .animate-spin {
     animation: spin 1s linear infinite;
 }
+
+#customUkuranWrapper {
+    transition: all 0.3s ease;
+}
 </style>
 @endpush
+
 @endsection
