@@ -239,36 +239,32 @@ class KelolaAkunController extends Controller
             $import = new UsersImport;
             Excel::import($import, $file);
             
-            $successCount = $import->getSuccessCount();
-            $skippedCount = $import->getSkippedCount();
-            $errors = $import->getErrors();
+            $success = $import->getSuccessCount();
+            $skipped = $import->getSkippedCount();
+            $reasons = $import->getReasons();
             
-            if ($successCount > 0) {
-                $message = "✅ {$successCount} data berhasil diimport!";
-                if ($skippedCount > 0) {
-                    $message .= " ⚠️ {$skippedCount} data dilewati.";
-                    if (!empty($errors)) {
-                        $message .= " Detail: " . implode(', ', array_slice($errors, 0, 5));
+            // Log hasil import
+            Log::info("Import result: Success={$success}, Skipped={$skipped}");
+            Log::info("Skip reasons: ", $reasons);
+            
+            if ($success > 0) {
+                $message = "✅ Berhasil import {$success} data!";
+                if ($skipped > 0) {
+                    $message .= " ⚠️ {$skipped} data gagal.";
+                    if (!empty($reasons)) {
+                        $message .= " Contoh: " . implode(', ', array_slice($reasons, 0, 3));
                     }
                 }
                 return redirect()->route('admin.kelola-akun.index')->with('success', $message);
             } else {
-                $errorMsg = "Tidak ada data yang diimport. ";
-                if (!empty($errors)) {
-                    $errorMsg .= "Error: " . implode(', ', array_slice($errors, 0, 5));
+                $errorMsg = "❌ Gagal import. Tidak ada data yang masuk.";
+                if (!empty($reasons)) {
+                    $errorMsg .= " Penyebab: " . implode(', ', array_slice($reasons, 0, 5));
                 } else {
-                    $errorMsg .= "Pastikan format file sesuai template.";
+                    $errorMsg .= " Cek format file Excel. Header harus: nisn_nik, name, email, role, kelas, phone, address";
                 }
                 return redirect()->back()->with('error', $errorMsg);
             }
-                    
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-            $failures = $e->failures();
-            $errorMessages = [];
-            foreach ($failures as $failure) {
-                $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
-            }
-            return redirect()->back()->with('error', 'Validasi gagal:<br>' . implode('<br>', array_slice($errorMessages, 0, 10)));
                     
         } catch (\Exception $e) {
             Log::error('Import error: ' . $e->getMessage());
