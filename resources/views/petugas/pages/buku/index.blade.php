@@ -15,7 +15,7 @@
             
             {{-- Tombol Aksi --}}
             <div class="flex gap-2">
-                {{-- Tombol Import Excel --}}
+                {{-- Tombol Import Excel dengan Alpine.js --}}
                 <button type="button" 
                         x-data
                         @click="$dispatch('open-import-modal')"
@@ -74,49 +74,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <span class="font-medium">{{ session('success') }}</span>
-        </div>
-        @endif
-
-        {{-- Notifikasi Warning Import (ada error) --}}
-        @if(session('warning') && str_contains(session('warning'), 'import'))
-        <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg shadow-sm">
-            <div class="flex items-start gap-3">
-                <svg class="w-6 h-6 text-yellow-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-                <div class="flex-1">
-                    <p class="text-yellow-700 font-medium">{{ session('warning') }}</p>
-                </div>
-            </div>
-        </div>
-        @endif
-
-        {{-- Notifikasi Error --}}
-        @if(session('error'))
-        <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg shadow-sm flex items-center gap-3">
-            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="font-medium">{{ session('error') }}</span>
-        </div>
-        @endif
-
-        {{-- Tampilkan list error import --}}
-        @if(session('import_errors') && count(session('import_errors')) > 0)
-        <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg shadow-sm">
-            <div class="flex items-start gap-3">
-                <svg class="w-6 h-6 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <div class="flex-1">
-                    <p class="text-red-700 font-medium">Detail kesalahan import:</p>
-                    <ul class="mt-2 text-sm text-red-600 list-disc list-inside space-y-1">
-                        @foreach(session('import_errors') as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
         </div>
         @endif
 
@@ -355,15 +312,11 @@
                                 </span>
                                 {{ ucfirst($item->status) }}
                             </span>
-                            @if($item->ketersediaan && $item->ketersediaan != $item->status)
-                                <div class="text-xs text-gray-400 mt-1">({{ ucfirst($item->ketersediaan) }})</div>
-                            @endif
                         </td>
 
                         {{-- Aksi --}}
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-center gap-1">
-                                {{-- Tombol Detail --}}
                                 <button onclick="showDetail({{ $item->id }})" 
                                         class="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                                         title="Detail Buku">
@@ -373,7 +326,6 @@
                                     </svg>
                                 </button>
 
-                                {{-- Tombol Edit --}}
                                 <a href="{{ route('petugas.buku.edit', $item->id) }}" 
                                    class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                    title="Edit Buku">
@@ -382,7 +334,6 @@
                                     </svg>
                                 </a>
 
-                                {{-- Tombol Hapus --}}
                                 <button type="button" 
                                         onclick="confirmDelete({{ $item->id }}, '{{ addslashes($item->judul) }}')" 
                                         class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -392,7 +343,6 @@
                                     </svg>
                                 </button>
 
-                                {{-- Form Delete Tersembunyi --}}
                                 <form id="delete-form-{{ $item->id }}" 
                                     action="{{ route('petugas.buku.destroy', $item->id) }}" 
                                     method="POST" 
@@ -420,7 +370,6 @@
             </table>
         </div>
 
-        {{-- Pagination --}}
         @if($buku->hasPages())
             <div class="px-4 py-3 border-t border-gray-100">
                 {{ $buku->withQueryString()->links() }}
@@ -430,7 +379,7 @@
 </div>
 
 {{-- MODAL IMPORT EXCEL dengan Alpine.js --}}
-<div x-data="{ importModal: false }" 
+<div x-data="{ importModal: false, fileName: '' }" 
      @open-import-modal.window="importModal = true"
      x-cloak>
     
@@ -521,6 +470,7 @@
                                 Download Template
                             </a>
                             <button type="submit" 
+                                    id="importSubmitBtn"
                                     class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
@@ -543,7 +493,6 @@
         
         <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
             <div id="modalContent" class="p-6">
-                {{-- Konten akan diisi oleh JavaScript --}}
                 <div class="flex justify-center items-center h-32">
                     <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -559,7 +508,6 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Fungsi konfirmasi hapus dengan SweetAlert2
 function confirmDelete(id, judul) {
     Swal.fire({
         title: 'Yakin ingin menghapus?',
@@ -748,7 +696,6 @@ function showDetail(id) {
         });
 }
 
-// Fungsi escape HTML
 function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -763,7 +710,6 @@ function closeModal() {
     document.getElementById('detailModal').classList.add('hidden');
 }
 
-// Form submission loading
 document.getElementById('importForm')?.addEventListener('submit', function() {
     const btn = document.getElementById('importSubmitBtn');
     if (btn) {
@@ -778,82 +724,19 @@ document.getElementById('importForm')?.addEventListener('submit', function() {
     }
 });
 
-// Prevent modal close when clicking inside
-document.getElementById('importModal')?.addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeImportModal();
-    }
-});
-
-// Close modal with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();
-        closeImportModal();
     }
 });
 
-// SweetAlert notification for import success
 @if(session('import_success_count') && session('import_success_count') > 0)
 document.addEventListener('DOMContentLoaded', function() {
     Swal.fire({
         title: '✨ Import Berhasil!',
-        html: `
-            <p><strong>{{ session('import_success_count') }} buku</strong> berhasil diimport ke sistem.</p>
-            <div class="bg-yellow-50 p-3 rounded-lg mt-3 text-left">
-                <p class="text-sm text-yellow-800 flex items-center gap-2">
-                    <span>📷</span>
-                    <span>Jangan lupa tambahkan gambar cover untuk buku-buku tersebut!</span>
-                </p>
-            </div>
-        `,
+        html: '<p><strong>{{ session('import_success_count') }} buku</strong> berhasil diimport ke sistem.</p><div class="bg-yellow-50 p-3 rounded-lg mt-3 text-left"><p class="text-sm text-yellow-800">📷 Jangan lupa tambahkan gambar cover!</p></div>',
         icon: 'success',
         confirmButtonColor: '#4F46E5',
-        confirmButtonText: 'OK',
-        timer: 5000,
-        timerProgressBar: true
-    });
-});
-@endif
-
-@if(session('warning') && str_contains(session('warning'), 'import'))
-document.addEventListener('DOMContentLoaded', function() {
-    Swal.fire({
-        title: '⚠️ Import Selesai dengan Peringatan',
-        html: `{{ session('warning') }}`,
-        icon: 'warning',
-        confirmButtonColor: '#F59E0B',
-        confirmButtonText: 'OK'
-    });
-});
-@endif
-
-@if(session('import_errors') && count(session('import_errors')) > 0)
-document.addEventListener('DOMContentLoaded', function() {
-    let errorHtml = '<ul class="text-left list-disc list-inside max-h-60 overflow-y-auto">';
-    @foreach(session('import_errors') as $error)
-        errorHtml += '<li class="text-sm text-red-600 mb-1">{{ addslashes($error) }}</li>';
-    @endforeach
-    errorHtml += '</ul>';
-    
-    Swal.fire({
-        title: '❌ Ada Kesalahan Import',
-        html: errorHtml,
-        icon: 'error',
-        confirmButtonColor: '#EF4444',
-        confirmButtonText: 'Tutup',
-        width: '500px'
-    });
-});
-@endif
-
-@if(session('error'))
-document.addEventListener('DOMContentLoaded', function() {
-    Swal.fire({
-        title: '❌ Error!',
-        text: '{{ session('error') }}',
-        icon: 'error',
-        confirmButtonColor: '#EF4444',
         confirmButtonText: 'OK'
     });
 });
@@ -863,11 +746,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @push('styles')
 <style>
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-.animate-spin {
-    animation: spin 1s linear infinite;
-}
+[x-cloak] { display: none !important; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 1s linear infinite; }
 </style>
 @endpush
