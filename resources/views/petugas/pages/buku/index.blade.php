@@ -17,7 +17,8 @@
             <div class="flex gap-2">
                 {{-- Tombol Import Excel --}}
                 <button type="button" 
-                        onclick="openImportModal()"
+                        x-data
+                        @click="$dispatch('open-import-modal')"
                         class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg shadow-md transition-all duration-200">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
@@ -428,96 +429,107 @@
     </div>
 </div>
 
-{{-- MODAL IMPORT EXCEL --}}
-<div id="importModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+{{-- MODAL IMPORT EXCEL dengan Alpine.js --}}
+<div x-data="{ importModal: false }" 
+     @open-import-modal.window="importModal = true"
+     x-cloak>
+    
+    <div x-show="importModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto"
+         @keydown.escape.window="importModal = false">
         
-        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <div class="bg-white px-6 py-5">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Import Data Buku</h3>
-                            <p class="text-sm text-gray-500">Upload file Excel untuk menambah buku secara massal</p>
-                        </div>
-                    </div>
-                    <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <form action="{{ route('petugas.buku.import') }}" method="POST" enctype="multipart/form-data" id="importForm">
-                    @csrf
-                    
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Pilih File Excel <span class="text-red-500">*</span>
-                        </label>
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors cursor-pointer"
-                             onclick="document.getElementById('file_excel').click()">
-                            <input type="file" 
-                                   id="file_excel" 
-                                   name="file_excel" 
-                                   accept=".xlsx,.xls,.csv"
-                                   class="hidden"
-                                   onchange="updateFileName(this)"
-                                   required>
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <p class="mt-2 text-sm text-gray-600" id="file_name">Klik untuk upload atau drag file</p>
-                            <p class="text-xs text-gray-500">Format: XLSX, XLS, CSV (max 5MB)</p>
-                        </div>
-                        @error('file_excel')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    
-                    <div class="bg-blue-50 rounded-lg p-4 mb-4">
-                        <div class="flex items-start gap-2">
-                            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <div class="text-sm text-blue-800">
-                                <p class="font-medium">📋 Petunjuk Import:</p>
-                                <ul class="list-disc list-inside mt-1 space-y-1 text-xs">
-                                    <li>Gunakan template yang sudah disediakan</li>
-                                    <li>Kolom <strong>judul</strong> wajib diisi</li>
-                                    <li>Barcode akan digenerate otomatis oleh sistem</li>
-                                    <li>Buku yang sudah ada (judul + pengarang sama) akan dilewati</li>
-                                    <li>Setelah import, Anda bisa menambahkan cover buku melalui halaman edit</li>
-                                </ul>
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" @click="importModal = false">
+                <div class="absolute inset-0 bg-gray-500 bg-opacity-75"></div>
+            </div>
+            
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-6 py-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Import Data Buku</h3>
+                                <p class="text-sm text-gray-500">Upload file Excel untuk menambah buku secara massal</p>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="flex gap-3">
-                        <a href="{{ route('petugas.buku.download-template') }}" 
-                           class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        <button @click="importModal = false" class="text-gray-400 hover:text-gray-500">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
-                            Download Template
-                        </a>
-                        <button type="submit" 
-                                id="importSubmitBtn"
-                                class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
-                            </svg>
-                            Import Sekarang
                         </button>
                     </div>
-                </form>
+                    
+                    <form action="{{ route('petugas.buku.import') }}" method="POST" enctype="multipart/form-data" id="importForm">
+                        @csrf
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Pilih File Excel <span class="text-red-500">*</span>
+                            </label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors cursor-pointer"
+                                 @click="$refs.fileInput.click()">
+                                <input type="file" 
+                                       x-ref="fileInput"
+                                       name="file_excel" 
+                                       accept=".xlsx,.xls,.csv"
+                                       class="hidden"
+                                       @change="fileName = $refs.fileInput.files[0]?.name || ''"
+                                       required>
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-600" x-text="fileName || 'Klik untuk upload atau drag file'"></p>
+                                <p class="text-xs text-gray-500">Format: XLSX, XLS, CSV (max 5MB)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div class="text-sm text-blue-800">
+                                    <p class="font-medium">📋 Petunjuk Import:</p>
+                                    <ul class="list-disc list-inside mt-1 space-y-1 text-xs">
+                                        <li>Gunakan template yang sudah disediakan</li>
+                                        <li>Kolom <strong>judul</strong> wajib diisi</li>
+                                        <li>Barcode akan digenerate otomatis oleh sistem</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <a href="{{ route('petugas.buku.download-template') }}" 
+                               class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                Download Template
+                            </a>
+                            <button type="submit" 
+                                    class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                </svg>
+                                Import Sekarang
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -749,26 +761,6 @@ function escapeHtml(str) {
 
 function closeModal() {
     document.getElementById('detailModal').classList.add('hidden');
-}
-
-// Modal Import functions
-function openImportModal() {
-    document.getElementById('importModal').classList.remove('hidden');
-}
-
-function closeImportModal() {
-    document.getElementById('importModal').classList.add('hidden');
-    document.getElementById('importForm').reset();
-    document.getElementById('file_name').innerHTML = 'Klik untuk upload atau drag file';
-}
-
-function updateFileName(input) {
-    const fileName = document.getElementById('file_name');
-    if (input.files && input.files[0]) {
-        fileName.innerHTML = `<span class="text-green-600">✓</span> ${input.files[0].name}`;
-    } else {
-        fileName.innerHTML = 'Klik untuk upload atau drag file';
-    }
 }
 
 // Form submission loading
