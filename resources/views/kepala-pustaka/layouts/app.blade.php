@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Kepala Pustaka - Perpustakaan SMAN 1 Tambang')</title>
-    <link rel="icon" type="image/x-icon" href="{{ asset('img/favicon.png') }}">
+    <img src="{{ secure_asset('img/logo.jpg') }}">
 
     {{-- CSS Includes --}}
     @include('kepala-pustaka.layouts.css')

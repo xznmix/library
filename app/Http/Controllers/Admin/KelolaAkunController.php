@@ -229,13 +229,6 @@ class KelolaAkunController extends Controller
      */
     public function import(Request $request)
     {
-        // Log untuk debugging
-        Log::info('Import function called', [
-            'all_files' => $request->allFiles(),
-            'has_file' => $request->hasFile('excel_file'),
-            'method' => $request->method(),
-        ]);
-        
         $request->validate([
             'excel_file' => 'required|mimes:xlsx,xls,csv|max:10240'
         ]);
@@ -243,37 +236,30 @@ class KelolaAkunController extends Controller
         try {
             $file = $request->file('excel_file');
             
-            Log::info('File details', [
-                'name' => $file->getClientOriginalName(),
-                'size' => $file->getSize(),
-                'extension' => $file->getClientOriginalExtension(),
-                'mime' => $file->getMimeType()
-            ]);
-            
             $import = new UsersImport;
             Excel::import($import, $file);
             
-            $imported = $import->getRowCount();
-            $skipped = $import->getSkippedCount();
+            $successCount = $import->getSuccessCount();
+            $skippedCount = $import->getSkippedCount();
+            $errors = $import->getErrors();
             
-            Log::info('Import completed', [
-                'imported' => $imported,
-                'skipped' => $skipped
-            ]);
-            
-            if ($imported > 0) {
-                $message = "✅ {$imported} data berhasil diimport!";
-                if ($skipped > 0) {
-                    $message .= " ⚠️ {$skipped} data dilewati (NISN/NIK sudah ada atau data tidak valid).";
+            if ($successCount > 0) {
+                $message = "✅ {$successCount} data berhasil diimport!";
+                if ($skippedCount > 0) {
+                    $message .= " ⚠️ {$skippedCount} data dilewati.";
+                    if (!empty($errors)) {
+                        $message .= " Detail: " . implode(', ', array_slice($errors, 0, 5));
+                    }
                 }
-                
-                return redirect()
-                    ->route('admin.kelola-akun.index')
-                    ->with('success', $message);
+                return redirect()->route('admin.kelola-akun.index')->with('success', $message);
             } else {
-                return redirect()
-                    ->back()
-                    ->with('error', 'Tidak ada data baru yang diimport. Periksa format file Excel Anda.');
+                $errorMsg = "Tidak ada data yang diimport. ";
+                if (!empty($errors)) {
+                    $errorMsg .= "Error: " . implode(', ', array_slice($errors, 0, 5));
+                } else {
+                    $errorMsg .= "Pastikan format file sesuai template.";
+                }
+                return redirect()->back()->with('error', $errorMsg);
             }
                     
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
@@ -282,7 +268,6 @@ class KelolaAkunController extends Controller
             foreach ($failures as $failure) {
                 $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
             }
-            Log::error('Validation errors: ', $errorMessages);
             return redirect()->back()->with('error', 'Validasi gagal:<br>' . implode('<br>', array_slice($errorMessages, 0, 10)));
                     
         } catch (\Exception $e) {

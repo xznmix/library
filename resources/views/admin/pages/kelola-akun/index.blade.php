@@ -117,8 +117,8 @@
 
                     <select name="status" class="px-4 py-3 border border-gray-300 rounded-lg">
                         <option value="">Semua Status</option>
-                        <option value="aktif" {{ request('status')=='aktif'?'selected':'' }}>Aktif</option>
-                        <option value="nonaktif" {{ request('status')=='nonaktif'?'selected':'' }}>Nonaktif</option>
+                        <option value="active" {{ request('status')=='active'?'selected':'' }}>Aktif</option>
+                        <option value="inactive" {{ request('status')=='inactive'?'selected':'' }}>Nonaktif</option>
                     </select>
 
                     <button type="submit"
