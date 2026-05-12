@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>@yield('title', 'Dashboard Anggota')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <img src="{{ secure_asset('img/logo.jpg') }}">
+    <link rel="icon" href="{{ secure_asset('img/logo.jpg') }}">
 
     @include('anggota.layouts.css')
 </head>

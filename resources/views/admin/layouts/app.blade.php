@@ -24,5 +24,7 @@
     </div>
 
     @include('admin.layouts.js')
+
+    @stack('scripts')
 </body>
 </html>
