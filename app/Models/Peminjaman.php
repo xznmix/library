@@ -156,7 +156,7 @@ class Peminjaman extends Model
             Denda::updateOrCreate(
                 ['peminjaman_id' => $this->id],
                 [
-                    'id_anggota' => $this->user_id,
+                    'user_id' => $this->user_id,
                     'jumlah_denda' => $dendaTotal,
                     'denda_terlambat' => $dendaTerlambat,
                     'denda_kerusakan' => $dendaRusak,
