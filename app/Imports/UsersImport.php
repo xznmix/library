@@ -78,7 +78,17 @@ class UsersImport implements ToModel, WithHeadingRow
         }
         
         // Generate No Anggota
-        $noAnggota = AnggotaHelper::generateNoAnggota($role);
+        $noAnggota = $row['no_anggota'] ?? null;
+
+        if (empty($noAnggota)) {
+            $noAnggota = AnggotaHelper::generateNoAnggota($role);
+        } else {
+            // Validasi apakah no_anggota sudah dipakai
+            if (User::where('no_anggota', $noAnggota)->exists()) {
+                // Jika sudah ada, generate otomatis
+                $noAnggota = AnggotaHelper::generateNoAnggota($role);
+            }
+        }
         
         // BUAT USER
         try {
