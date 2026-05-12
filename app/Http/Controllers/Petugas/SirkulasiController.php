@@ -633,15 +633,12 @@ class SirkulasiController extends Controller
             $dendaRusak = (int) $request->denda_rusak;
             $dendaTotal = $dendaTerlambat + $dendaRusak;
             
-            // Hitung hari terlambat
             $jatuhTempo = Carbon::parse($peminjaman->tgl_jatuh_tempo);
             $tanggalKembali = Carbon::parse($request->tanggal_pengembalian);
             $hariTerlambat = $tanggalKembali->gt($jatuhTempo) ? $jatuhTempo->diffInDays($tanggalKembali) : 0;
             
-            // Update book stock
             $this->updateBookStock($peminjaman->buku, $request->kondisi_kembali);
             
-            // Update peminjaman record
             $peminjaman->tanggal_pengembalian = $request->tanggal_pengembalian;
             $peminjaman->status_pinjam = 'dikembalikan';
             $peminjaman->kondisi_kembali = $request->kondisi_kembali;
@@ -649,10 +646,8 @@ class SirkulasiController extends Controller
             $peminjaman->updated_by = Auth::id();
             $peminjaman->petugas_id = Auth::id();
             
-            // Update denda menggunakan method yang sudah dibuat
             $peminjaman->updateDendaTotal($dendaTerlambat, $dendaRusak, $hariTerlambat);
             
-            // Set status verifikasi
             if ($dendaTotal > 0 && $request->payment_method === 'tunai') {
                 $peminjaman->status_verifikasi = 'disetujui';
             } elseif ($dendaTotal > 0 && $request->payment_method === 'qris') {
@@ -663,39 +658,47 @@ class SirkulasiController extends Controller
             
             $peminjaman->save();
             
-            // Update denda record jika ada
+            // Update atau create denda record
             if ($dendaTotal > 0) {
-                $denda = Denda::where('peminjaman_id', $peminjaman->id)->first();
-                if ($denda) {
-                    $denda->update([
+                $denda = Denda::updateOrCreate(
+                    ['peminjaman_id' => $peminjaman->id],
+                    [
+                        'jumlah_denda' => $dendaTotal,
+                        'denda_terlambat' => $dendaTerlambat,
+                        'denda_kerusakan' => $dendaRusak,
+                        'hari_terlambat' => $hariTerlambat,
+                        'keterangan' => $request->catatan_kondisi,
                         'status' => $request->payment_method === 'tunai' ? 'lunas' : 'pending',
                         'payment_status' => $request->payment_method === 'tunai' ? 'paid' : 'pending',
                         'payment_method' => $request->payment_method,
                         'confirmed_by' => $request->payment_method === 'tunai' ? Auth::id() : null,
                         'paid_at' => $request->payment_method === 'tunai' ? now() : null,
-                    ]);
+                    ]
+                );
+                
+                // ✅ QRIS - Redirect ke halaman pembayaran
+                if ($request->payment_method === 'qris') {
+                    DB::commit();
+                    return redirect()
+                        ->route('petugas.sirkulasi.pembayaran.show', $denda->id)
+                        ->with('success', '✅ Buku berhasil dikembalikan. Silakan lakukan pembayaran QRIS.');
+                }
+                
+                // ✅ TUNAI - Redirect ke daftar denda
+                if ($request->payment_method === 'tunai') {
+                    DB::commit();
+                    return redirect()
+                        ->route('petugas.sirkulasi.denda.index')
+                        ->with('success', '✅ Buku berhasil dikembalikan. Pembayaran denda tunai telah dicatat.');
                 }
             }
             
             DB::commit();
             
-            // Redirect berdasarkan metode pembayaran
-            if ($dendaTotal > 0 && $request->payment_method === 'qris') {
-                return redirect()
-                    ->route('petugas.sirkulasi.pembayaran.show', $denda->id_denda ?? 0)
-                    ->with('success', '✅ Buku berhasil dikembalikan. Silakan lakukan pembayaran QRIS.');
-            }
-            
-            if ($dendaTotal > 0 && $request->payment_method === 'tunai') {
-                return redirect()
-                    ->route('petugas.sirkulasi.denda.index')
-                    ->with('success', '✅ Buku berhasil dikembalikan. Pembayaran denda tunai telah dicatat.');
-            }
-            
             return redirect()
                 ->route('petugas.sirkulasi.pengembalian.index')
                 ->with('success', '✅ Buku berhasil dikembalikan. Terima kasih!');
-            
+                
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Gagal memproses pengembalian: ' . $e->getMessage());
