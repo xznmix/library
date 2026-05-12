@@ -234,7 +234,10 @@ class SirkulasiController extends Controller
             }
             
             // Check if member has unpaid fines
-            $unpaidFines = Denda::where('id_anggota', $request->user_id)
+            // Check if member has unpaid fines - melalui relasi peminjaman
+            $unpaidFines = Denda::whereHas('peminjaman', function($query) use ($request) {
+                    $query->where('user_id', $request->user_id);
+                })
                 ->where('payment_status', '!=', 'paid')
                 ->exists();
             
@@ -1301,7 +1304,7 @@ class SirkulasiController extends Controller
         
         return Denda::create([
             'peminjaman_id' => $peminjaman->id,
-            'id_anggota' => $peminjaman->user_id,
+            //'id_anggota' => $peminjaman->user_id,
             'jumlah_denda' => $dendaTotal,
             'keterangan' => $keterangan,
             'status' => $statusOld,
