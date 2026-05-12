@@ -679,8 +679,8 @@ class SirkulasiController extends Controller
                 // ✅ QRIS - Redirect ke halaman pembayaran
                 if ($request->payment_method === 'qris') {
                     DB::commit();
-                    return redirect()
-                        ->route('petugas.sirkulasi.pembayaran.show', $denda->id)
+                    $dendaId = $denda->id_denda ?? $denda->id;  // ← AMBIL ID YANG BENAR
+                    return redirect()->route('petugas.sirkulasi.pembayaran.show', $dendaId)
                         ->with('success', '✅ Buku berhasil dikembalikan. Silakan lakukan pembayaran QRIS.');
                 }
                 
