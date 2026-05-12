@@ -76,7 +76,7 @@ class Denda extends Model
 
     public function anggota()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'id_anggota');
     }
 
     public function confirmedBy()

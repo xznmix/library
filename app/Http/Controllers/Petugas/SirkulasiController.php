@@ -1307,7 +1307,7 @@ class SirkulasiController extends Controller
         
         return Denda::create([
             'peminjaman_id' => $peminjaman->id,
-            //'id_anggota' => $peminjaman->user_id,
+            'id_anggota' => $peminjaman->user_id,
             'jumlah_denda' => $dendaTotal,
             'keterangan' => $keterangan,
             'status' => $statusOld,
