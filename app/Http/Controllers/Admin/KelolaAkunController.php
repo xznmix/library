@@ -179,84 +179,53 @@ class KelolaAkunController extends Controller
      */
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
-        
-        // Cegah hapus diri sendiri
-        if ($user->id == Auth::id()) {
-            return back()->with('error', 'Tidak dapat menghapus akun sendiri.');
-        }
-        
-        // Cegah hapus admin terakhir
-        if ($user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
-            return back()->with('error', 'Tidak dapat menghapus admin terakhir.');
-        }
-        
         try {
-            DB::beginTransaction();
-            
-            // Hapus semua relasi dengan ON DELETE CASCADE atau manual
-            // Urutan penting: hapus child dulu sebelum parent
-            
-            // 1. Hapus data peminjaman digital
-            \App\Models\PeminjamanDigital::where('user_id', $user->id)->delete();
-            \App\Models\DigitalAccessLog::where('user_id', $user->id)->delete();
-            
-            // 2. Hapus data peminjaman fisik
-            \App\Models\Peminjaman::where('user_id', $user->id)->delete();
-            \App\Models\PeminjamanLog::where('user_id', $user->id)->delete();
-            
-            // 3. Hapus data denda
-            \App\Models\Denda::where('id_anggota', $user->id)->delete();
-            
-            // 4. Hapus data kunjungan
-            \App\Models\Kunjungan::where('user_id', $user->id)->delete();
-            
-            // 5. Hapus data booking
-            \App\Models\Booking::where('user_id', $user->id)->delete();
-            
-            // 6. Hapus data notifikasi
-            \App\Models\Notification::where('user_id', $user->id)->delete();
-            \App\Models\Notifikasi::where('user_id', $user->id)->delete();
-            
-            // 7. Hapus data ulasan dan favorit
-            \App\Models\UlasanBuku::where('user_id', $user->id)->delete();
-            \App\Models\FavoritBuku::where('user_id', $user->id)->delete();
-            
-            // 8. Hapus data poin anggota
-            \App\Models\PoinAnggota::where('user_id', $user->id)->delete();
-            
-            // 9. Hapus data baca di tempat
-            \App\Models\BacaDiTempat::where('anggota_id', $user->id)->delete();
-            
-            // 10. Hapus data stock opname log
-            \App\Models\StockOpnameLog::where('user_id', $user->id)->delete();
-            
-            // 11. Hapus activity log
-            \App\Models\ActivityLog::where('user_id', $user->id)->delete();
-            
-            // 12. Update referensi (set null)
-            \App\Models\User::where('approved_by', $user->id)->update(['approved_by' => null]);
-            \App\Models\User::where('processed_by', $user->id)->update(['processed_by' => null]);
-            
-            // 13. Hapus data anggota
-            \App\Models\Anggota::where('user_id', $user->id)->delete();
-            
-            // 14. Terakhir, hapus user
+
+            $user = User::findOrFail($id);
+
+            if ($user->id == Auth::id()) {
+                return back()->with('error', 'Tidak bisa hapus akun sendiri');
+            }
+
             $user->delete();
-            
-            DB::commit();
-            
-            return back()->with('success', 'Akun berhasil dihapus beserta semua data terkait.');
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Illuminate\Support\Facades\Log::error('Error deleting user ID ' . $id . ': ' . $e->getMessage());
-            return back()->with('error', 'Gagal menghapus akun: ' . $e->getMessage());
+
+            return back()->with('success', 'User berhasil dihapus');
+
+        } catch (\Throwable $e) {
+
+            return back()->with('error', $e->getMessage());
         }
     }
 
     /**
-     * Import users from Excel file - Enhanced version
+     * Reset password for a user.
+     */
+    public function resetPassword($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            // Reset password ke NISN/NIK
+            $newPassword = $user->nisn_nik;
+
+            $user->update([
+                'password' => Hash::make($newPassword),
+                'force_password_change' => true,
+            ]);
+
+            Log::info('Password reset for user: ' . $user->name);
+            
+            return redirect()->route('admin.kelola-akun.index')
+                ->with('success', 'Password berhasil direset ke NISN/NIK untuk user ' . $user->name);
+        } catch (\Exception $e) {
+            Log::error('Error resetting password for user ID ' . $id . ': ' . $e->getMessage());
+            return redirect()->route('admin.kelola-akun.index')
+                ->with('error', 'Gagal reset password: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Import users from Excel file - Enhanced version with custom no_anggota support
      */
     public function import(Request $request)
     {
@@ -292,7 +261,7 @@ class KelolaAkunController extends Controller
                 if (!empty($reasons)) {
                     $errorMsg .= " Penyebab: " . implode(', ', array_slice($reasons, 0, 5));
                 } else {
-                    $errorMsg .= " Cek format file Excel. Header harus: nisn_nik, name, email, role, kelas, phone, address";
+                    $errorMsg .= " Cek format file Excel. Header harus: nisn_nik, name, email, role, no_anggota (opsional), kelas, phone, address";
                 }
                 return redirect()->back()->with('error', $errorMsg);
             }
@@ -305,38 +274,20 @@ class KelolaAkunController extends Controller
     }
 
     /**
-     * Reset password for a user.
-     */
-    public function resetPassword($id)
-    {
-        $user = User::findOrFail($id);
-
-        // Reset password ke NISN/NIK
-        $newPassword = $user->nisn_nik;
-
-        $user->update([
-            'password' => Hash::make($newPassword),
-            'force_password_change' => true,
-        ]);
-
-        return back()->with('success', 'Password berhasil direset ke NISN/NIK.');
-    }
-
-    /**
      * Download template for import (CSV format - works for all users)
      */
     public function downloadTemplate()
     {
-        $headers = ['nisn_nik', 'name', 'email', 'role', 'kelas', 'phone', 'address'];
+        $headers = ['nisn_nik', 'name', 'email', 'role', 'no_anggota', 'kelas', 'phone', 'address'];
         
         // Data contoh yang valid
         $sampleData = [
-            ['12345678', 'Andi Wijaya', 'andi@perpustakaan.com', 'siswa', 'X IPA 1', '081234567890', 'Jl. Pendidikan No. 1'],
-            ['87654321', 'Budi Santoso', 'budi@perpustakaan.com', 'guru', '', '081234567891', ''],
-            ['11223344', 'Citra Dewi', 'citra@perpustakaan.com', 'pegawai', '', '081234567892', ''],
-            ['44332211', 'Dewi Putri', 'dewi@perpustakaan.com', 'umum', '', '081234567893', ''],
-            ['55667788', 'Eka Prasetya', 'eka@perpustakaan.com', 'siswa', 'XII IPA 2', '081234567894', 'Jl. Mawar No. 5'],
-            ['99887766', 'Fajar Nugroho', 'fajar@perpustakaan.com', 'guru', '', '081234567895', ''],
+            ['12345678', 'Andi Wijaya', 'andi@perpustakaan.com', 'siswa', '', 'X IPA 1', '081234567890', 'Jl. Pendidikan No. 1'],
+            ['87654321', 'Budi Santoso', 'budi@perpustakaan.com', 'guru', 'GURU2024001', '', '081234567891', ''],
+            ['11223344', 'Citra Dewi', 'citra@perpustakaan.com', 'pegawai', 'PGW2024001', '', '081234567892', ''],
+            ['44332211', 'Dewi Putri', 'dewi@perpustakaan.com', 'umum', 'UMUM2024001', '', '081234567893', ''],
+            ['55667788', 'Eka Prasetya', 'eka@perpustakaan.com', 'siswa', '', 'XII IPA 2', '081234567894', 'Jl. Mawar No. 5'],
+            ['99887766', 'Fajar Nugroho', 'fajar@perpustakaan.com', 'guru', '', '', '081234567895', ''],
         ];
         
         // Buat response CSV

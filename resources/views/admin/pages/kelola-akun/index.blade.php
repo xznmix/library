@@ -18,8 +18,7 @@
             <div class="flex flex-wrap gap-3">
                 <!-- Import Excel Button -->
                 <button type="button"
-                        x-data
-                        @click="$dispatch('open-import-modal')"
+                        onclick="openImportModal()"
                         class="inline-flex items-center gap-2 px-4 py-3 bg-hijau-500 hover:bg-hijau-600 text-white rounded-lg font-medium transition-colors shadow-sm">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -136,41 +135,23 @@
             <table class="w-full min-w-full divide-y divide-gray-200">
                 <thead class="bg-gradient-to-r from-biru-600 to-biru-700">
                     <tr>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            No
-                        </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            No. Anggota
-                        </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            Pengguna
-                        </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            Identitas
-                        </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            Peran
-                        </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            Status
-                        </th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                            Aksi
-                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">No</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">No. Anggota</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Pengguna</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Identitas</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Peran</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                     @forelse ($users as $index => $user)
                     <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-hitam-500">
-                            {{ $users->firstItem() + $index }}
-                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-hitam-500">{{ $users->firstItem() + $index }}</td>
 
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($user->no_anggota)
-                                <span class="font-mono text-sm font-medium text-biru-600 bg-biru-50 px-2 py-1 rounded">
-                                    {{ $user->no_anggota }}
-                                </span>
+                                <span class="font-mono text-sm font-medium text-biru-600 bg-biru-50 px-2 py-1 rounded">{{ $user->no_anggota }}</span>
                             @else
                                 <span class="text-hitam-400 text-xs">-</span>
                             @endif
@@ -200,9 +181,7 @@
                         <td class="px-6 py-4">
                             <div class="text-sm text-hitam-800 font-mono">{{ $user->nisn_nik }}</div>
                             @if($user->kelas || $user->jurusan)
-                                <div class="text-xs text-hitam-500 mt-1">
-                                    {{ $user->kelas }} {{ $user->jurusan }}
-                                </div>
+                                <div class="text-xs text-hitam-500 mt-1">{{ $user->kelas }} {{ $user->jurusan }}</div>
                             @endif
                         </td>
 
@@ -222,25 +201,16 @@
 
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                @if($user->status === 'active')
-                                    bg-hijau-100 text-hijau-800
-                                @else
-                                    bg-oren-100 text-oren-800
-                                @endif">
+                                @if($user->status === 'active') bg-hijau-100 text-hijau-800
+                                @else bg-oren-100 text-oren-800 @endif">
                                 <span class="w-2 h-2 rounded-full mr-1.5
-                                    @if($user->status === 'active')
-                                        bg-hijau-500
-                                    @else
-                                        bg-oren-500
-                                    @endif">
+                                    @if($user->status === 'active') bg-hijau-500
+                                    @else bg-oren-500 @endif">
                                 </span>
                                 {{ $user->status === 'active' ? 'AKTIF' : 'NONAKTIF' }}
                             </span>
-                            
                             @if($user->masa_berlaku)
-                                <div class="text-xs text-hitam-500 mt-1">
-                                    Berlaku: {{ \Carbon\Carbon::parse($user->masa_berlaku)->format('d/m/Y') }}
-                                </div>
+                                <div class="text-xs text-hitam-500 mt-1">Berlaku: {{ \Carbon\Carbon::parse($user->masa_berlaku)->format('d/m/Y') }}</div>
                             @endif
                         </td>
 
@@ -249,335 +219,36 @@
                             <div class="flex items-center gap-2">
                                 <!-- Edit Button -->
                                 <a href="{{ route('admin.kelola-akun.edit', $user->id) }}" 
-                                class="p-2 text-biru-600 hover:bg-biru-50 rounded-lg transition-colors duration-200 group relative"
-                                title="Edit Akun">
+                                   class="p-2 text-biru-600 hover:bg-biru-50 rounded-lg transition-colors duration-200" title="Edit Akun">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
-                                    <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-hitam-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                        Edit Akun
-                                    </span>
                                 </a>
                                 
-                                <!-- Reset Password Button with Modal -->
-                                <div x-data="{ 
-                                    showResetConfirm: false,
-                                    resetPassword() {
-                                        this.showResetConfirm = false;
-                                        this.$refs.resetForm.submit();
-                                    }
-                                }" class="relative">
+                                <!-- Reset Password Button -->
+                                <form action="{{ route('admin.kelola-akun.reset', $user->id) }}" method="POST" class="inline-block" id="reset-form-{{ $user->id }}">
+                                    @csrf
                                     <button type="button"
-                                            @click="showResetConfirm = true"
-                                            class="p-2 text-oren-600 hover:bg-oren-50 rounded-lg transition-colors duration-200 group relative"
-                                            title="Reset Password">
+                                            onclick="confirmReset({{ $user->id }}, '{{ addslashes($user->name) }}', '{{ $user->nisn_nik }}')"
+                                            class="p-2 text-oren-600 hover:bg-oren-50 rounded-lg transition-colors duration-200" title="Reset Password">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                                         </svg>
-                                        <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-hitam-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                            Reset Password
-                                        </span>
                                     </button>
-                                    
-                                    <!-- Reset Password Confirmation Modal -->
-                                    <div x-show="showResetConfirm" 
-                                        x-cloak
-                                        class="fixed inset-0 z-50 overflow-y-auto"
-                                        @keydown.escape.window="showResetConfirm = false">
-                                        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                                            <div class="fixed inset-0 transition-opacity" @click="showResetConfirm = false">
-                                                <div class="absolute inset-0 bg-hitam-800 opacity-75"></div>
-                                            </div>
-                                            
-                                            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-                                            
-                                            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                                                <!-- Modal Header -->
-                                                <div class="bg-gradient-to-r from-oren-500 to-oren-600 px-6 py-4">
-                                                    <div class="flex items-center">
-                                                        <div class="bg-white rounded-full p-2 mr-3">
-                                                            <svg class="w-6 h-6 text-oren-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                                            </svg>
-                                                        </div>
-                                                        <div>
-                                                            <h3 class="text-lg font-semibold text-white">
-                                                                Konfirmasi Reset Password
-                                                            </h3>
-                                                            <p class="text-oren-100 text-sm mt-1">
-                                                                Password akan direset ke NISN/NIK pengguna
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <!-- Modal Body -->
-                                                <div class="px-6 py-6">
-                                                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                                                        <div class="flex">
-                                                            <div class="flex-shrink-0">
-                                                                <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                                                </svg>
-                                                            </div>
-                                                            <div class="ml-3">
-                                                                <p class="text-sm text-yellow-700">
-                                                                    Password akan direset ke <strong>{{ $user->nisn_nik }}</strong>
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div class="space-y-3">
-                                                        <div class="flex items-start space-x-3">
-                                                            <div class="flex-shrink-0">
-                                                                <svg class="w-5 h-5 text-hitam-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                                                </svg>
-                                                            </div>
-                                                            <div>
-                                                                <p class="text-sm font-medium text-hitam-800">{{ $user->name }}</p>
-                                                                <p class="text-xs text-hitam-500">{{ $user->email ?? 'No email' }}</p>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div class="flex items-start space-x-3">
-                                                            <div class="flex-shrink-0">
-                                                                <svg class="w-5 h-5 text-hitam-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
-                                                                </svg>
-                                                            </div>
-                                                            <div>
-                                                                <p class="text-sm text-hitam-600">Role: <span class="font-medium">{{ strtoupper($user->role) }}</span></p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                                                        <p class="text-sm text-hitam-600">
-                                                            <span class="font-semibold">Informasi Penting:</span><br>
-                                                            • Password akan direset ke NISN/NIK pengguna<br>
-                                                            • Pengguna akan diminta mengganti password saat login berikutnya<br>
-                                                            • Pastikan NISN/NIK yang tercatat sudah benar
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                
-                                                <!-- Modal Footer -->
-                                                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
-                                                    <button type="button"
-                                                            @click="showResetConfirm = false"
-                                                            class="px-4 py-2 border border-gray-300 rounded-lg text-hitam-700 hover:bg-gray-100 transition-colors">
-                                                        Batal
-                                                    </button>
-                                                    <button type="button"
-                                                            @click="resetPassword()"
-                                                            class="px-4 py-2 bg-gradient-to-r from-oren-500 to-oren-600 text-white rounded-lg hover:from-oren-600 hover:to-oren-700 transition-all shadow-sm">
-                                                        <span class="flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-                                                            </svg>
-                                                            Ya, Reset Password
-                                                        </span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Hidden Form for Reset -->
-                                    <form x-ref="resetForm" 
-                                        action="{{ route('admin.kelola-akun.reset', $user->id) }}" 
-                                        method="POST" 
-                                        class="hidden">
-                                        @csrf
-                                    </form>
-                                </div>
+                                </form>
                                 
-                                <!-- Delete Button with Modal -->
-                                <div x-data="{ 
-                                    showDeleteConfirm: false,
-                                    confirmDelete: false,
-                                    deleteAccount() {
-                                        if (this.confirmDelete) {
-                                            this.showDeleteConfirm = false;
-                                            this.$refs.deleteForm.submit();
-                                        }
-                                    }
-                                }" class="relative">
+                                <!-- Delete Button -->
+                                <form action="{{ route('admin.kelola-akun.destroy', $user->id) }}" method="POST" class="inline-block" id="delete-form-{{ $user->id }}">
+                                    @csrf
+                                    @method('DELETE')
                                     <button type="button"
-                                            @click="showDeleteConfirm = true; confirmDelete = false"
-                                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 group relative"
-                                            title="Hapus Akun">
+                                            onclick="confirmDelete({{ $user->id }}, '{{ addslashes($user->name) }}', '{{ $user->role }}', '{{ $user->no_anggota ?? '-' }}')"
+                                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200" title="Hapus Akun">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
-                                        <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-hitam-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                            Hapus Akun
-                                        </span>
                                     </button>
-                                    
-                                    <!-- Delete Confirmation Modal -->
-                                    <div x-show="showDeleteConfirm" 
-                                        x-cloak
-                                        class="fixed inset-0 z-50 overflow-y-auto"
-                                        @keydown.escape.window="showDeleteConfirm = false">
-                                        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                                            <div class="fixed inset-0 transition-opacity" @click="showDeleteConfirm = false">
-                                                <div class="absolute inset-0 bg-hitam-800 opacity-75"></div>
-                                            </div>
-                                            
-                                            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-                                            
-                                            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                                                <!-- Modal Header -->
-                                                <div class="bg-gradient-to-r from-red-500 to-rose-500 px-6 py-4">
-                                                    <div class="flex items-center">
-                                                        <div class="bg-white rounded-full p-2 mr-3">
-                                                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                            </svg>
-                                                        </div>
-                                                        <div>
-                                                            <h3 class="text-lg font-semibold text-white">
-                                                                Konfirmasi Hapus Akun
-                                                            </h3>
-                                                            <p class="text-red-100 text-sm mt-1">
-                                                                Tindakan ini tidak dapat dibatalkan!
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <!-- Modal Body -->
-                                                <div class="px-6 py-6">
-                                                    <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-                                                        <div class="flex">
-                                                            <div class="flex-shrink-0">
-                                                                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                                                </svg>
-                                                            </div>
-                                                            <div class="ml-3">
-                                                                <p class="text-sm text-red-700 font-medium">
-                                                                    Anda akan menghapus akun berikut secara permanen:
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div class="space-y-3 mb-4">
-                                                        <div class="flex items-start space-x-3">
-                                                            <div class="flex-shrink-0">
-                                                                <svg class="w-5 h-5 text-hitam-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                                                </svg>
-                                                            </div>
-                                                            <div>
-                                                                <p class="text-sm font-medium text-hitam-800">{{ $user->name }}</p>
-                                                                <p class="text-xs text-hitam-500">{{ $user->email ?? 'No email' }}</p>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div class="flex items-start space-x-3">
-                                                            <div class="flex-shrink-0">
-                                                                <svg class="w-5 h-5 text-hitam-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-                                                                </svg>
-                                                            </div>
-                                                            <div>
-                                                                <p class="text-sm text-hitam-600">No. Anggota: <span class="font-mono font-medium">{{ $user->no_anggota ?? '-' }}</span></p>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div class="flex items-start space-x-3">
-                                                            <div class="flex-shrink-0">
-                                                                <svg class="w-5 h-5 text-hitam-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
-                                                                </svg>
-                                                            </div>
-                                                            <div>
-                                                                <p class="text-sm text-hitam-600">Role: <span class="font-medium">{{ strtoupper($user->role) }}</span></p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div class="bg-yellow-50 rounded-lg p-4 mb-4">
-                                                        <p class="text-sm font-semibold text-yellow-800 mb-2">⚠️ Data yang akan ikut terhapus:</p>
-                                                        <ul class="text-xs text-yellow-700 space-y-1">
-                                                            <li class="flex items-center gap-2">
-                                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                                                                </svg>
-                                                                Data profil dan akun
-                                                            </li>
-                                                            <li class="flex items-center gap-2">
-                                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                                                                </svg>
-                                                                Riwayat peminjaman buku
-                                                            </li>
-                                                            <li class="flex items-center gap-2">
-                                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                                                                </svg>
-                                                                Data denda (jika ada)
-                                                            </li>
-                                                            <li class="flex items-center gap-2">
-                                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                                                                </svg>
-                                                                Riwayat kunjungan
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    
-                                                    <!-- Konfirmasi Checkbox -->
-                                                    <div class="border-2 border-red-200 rounded-lg p-4 bg-white">
-                                                        <label class="flex items-start gap-3 cursor-pointer">
-                                                            <input type="checkbox" 
-                                                                x-model="confirmDelete"
-                                                                class="mt-1 rounded border-red-300 text-red-600 focus:ring-red-500">
-                                                            <span class="text-sm text-hitam-700">
-                                                                Saya memahami bahwa tindakan ini <strong class="text-red-600">tidak dapat dibatalkan</strong> dan semua data terkait akan dihapus secara permanen dari sistem.
-                                                            </span>
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                
-                                                <!-- Modal Footer -->
-                                                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
-                                                    <button type="button"
-                                                            @click="showDeleteConfirm = false; confirmDelete = false"
-                                                            class="px-4 py-2 border border-gray-300 rounded-lg text-hitam-700 hover:bg-gray-100 transition-colors">
-                                                        Batal
-                                                    </button>
-                                                    <button type="button"
-                                                            @click="deleteAccount()"
-                                                            :disabled="!confirmDelete"
-                                                            :class="confirmDelete ? 'bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600' : 'bg-gray-300 cursor-not-allowed'"
-                                                            class="px-4 py-2 text-white rounded-lg transition-all shadow-sm disabled:opacity-50">
-                                                        <span class="flex items-center gap-2">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                            </svg>
-                                                            Ya, Hapus Permanen
-                                                        </span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Hidden Form for Delete -->
-                                    <form x-ref="deleteForm" 
-                                        action="{{ route('admin.kelola-akun.destroy', $user->id) }}" 
-                                        method="POST" 
-                                        class="hidden">
-                                        @csrf
-                                        @method('DELETE')
-                                    </form>
-                                </div>
+                                </form>
                             </div>
                         </td>
                     </tr>
@@ -589,13 +260,10 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13-5.75a4 4 0 01-4 4m4-4a4 4 0 00-4-4m-12 8a4 4 0 114 4m-4-4a4 4 0 104 4m12-4a4 4 0 11-8 0 4 4 0 018 0z"/>
                                 </svg>
                                 <p class="text-lg font-medium text-hitam-800 mb-2">Belum ada akun</p>
-                                <a href="{{ route('admin.kelola-akun.create') }}"
-                                   class="inline-flex items-center gap-2 px-4 py-2 bg-biru-600 text-white rounded-lg">
-                                    Tambah Akun Pertama
-                                </a>
+                                <a href="{{ route('admin.kelola-akun.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-biru-600 text-white rounded-lg">Tambah Akun Pertama</a>
                             </div>
                         </td>
-                    </table>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -608,100 +276,183 @@
         </div>
         @endif
     </div>
-    <!-- ===== END TABLE SECTION ===== -->
 </div>
 
 <!-- IMPORT EXCEL MODAL -->
-<div x-data="{ importModal: false }" 
-     @open-import-modal.window="importModal = true"
-     x-cloak>
-    
-    <div x-show="importModal" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 overflow-y-auto"
-         @keydown.escape.window="importModal = false">
+<div id="importModal" class="fixed inset-0 z-50 overflow-y-auto hidden" style="display: none;">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" onclick="closeImportModal()">
+            <div class="absolute inset-0 bg-hitam-800 opacity-75"></div>
+        </div>
         
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true"
-                 @click="importModal = false">
-                <div class="absolute inset-0 bg-hitam-800 opacity-75"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <div class="bg-gradient-to-r from-hijau-600 to-hijau-700 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-white">Import Data dari Excel</h3>
+                    <button onclick="closeImportModal()" class="text-white hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-            
-            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-                <!-- Header -->
-                <div class="bg-gradient-to-r from-hijau-600 to-hijau-700 px-6 py-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-white">
-                            Import Data dari Excel
-                        </h3>
-                        <button @click="importModal = false" class="text-white hover:text-gray-200">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
+            <form method="POST" action="{{ route('admin.kelola-akun.import') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="px-6 py-6">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-hitam-700 mb-2">File Excel <span class="text-red-500">*</span></label>
+                        <input type="file" name="excel_file" accept=".xlsx,.xls,.csv" class="w-full border border-gray-300 rounded-lg p-2" required>
+                    </div>
+                    
+                    <div class="bg-biru-50 border border-biru-100 rounded-lg p-4 mb-4">
+                        <p class="text-sm text-biru-800">Format: nisn_nik, name, email, role, no_anggota (opsional), kelas, phone, address</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <a href="{{ route('admin.kelola-akun.template') }}" class="text-hijau-600 hover:text-hijau-800">📥 Download Template Excel</a>
                     </div>
                 </div>
                 
-                <!-- Form -->
-                <form method="POST" action="{{ route('admin.kelola-akun.import') }}" enctype="multipart/form-data">
-                    @csrf
-                    <div class="px-6 py-6">
-                        <!-- File Upload -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-hitam-700 mb-2">
-                                File Excel <span class="text-red-500">*</span>
-                            </label>
-                            <input type="file" 
-                                   name="excel_file" 
-                                   accept=".xlsx,.xls,.csv"
-                                   class="w-full border border-gray-300 rounded-lg p-2"
-                                   required>
-                        </div>
-                        
-                        <!-- Info -->
-                        <div class="bg-biru-50 border border-biru-100 rounded-lg p-4 mb-4">
-                            <p class="text-sm text-biru-800">
-                                Format: NISN_NIK, Name, Email, Role (siswa/guru/pegawai/umum)
-                            </p>
-                        </div>
-                        
-                        <!-- Template Link -->
-                        <div class="mb-6">
-                            <a href="{{ route('admin.kelola-akun.template') }}" 
-                               class="text-hijau-600 hover:text-hijau-800">
-                                Download Template Excel
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- Footer -->
-                    <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
-                        <button type="button"
-                                @click="importModal = false"
-                                class="px-4 py-2 border border-gray-300 rounded-lg text-hitam-700 hover:bg-gray-50">
-                            Batal
-                        </button>
-                        <button type="submit"
-                                class="px-4 py-2 bg-hijau-600 text-white rounded-lg hover:bg-hijau-700">
-                            Import Data
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeImportModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-hitam-700 hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-hijau-600 text-white rounded-lg hover:bg-hijau-700">Import Data</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Toast notification helper
+function showToast(icon, title) {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+    });
+    Toast.fire({ icon: icon, title: title });
+}
+
+// Reset Password Confirmation
+function confirmReset(userId, userName, nisnNik) {
+    Swal.fire({
+        title: 'Reset Password?',
+        html: `
+            <div class="text-left">
+                <p class="mb-3">Password untuk akun:</p>
+                <div class="bg-gray-100 p-3 rounded-lg mb-3">
+                    <p><strong>Nama:</strong> ${userName}</p>
+                </div>
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-yellow-700 text-sm">
+                    Password akan direset ke: <strong>${nisnNik}</strong>
+                </div>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#F97316',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Ya, Reset Password!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Meresuset...',
+                text: 'Mohon tunggu',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            document.getElementById(`reset-form-${userId}`).submit();
+        }
+    });
+}
+
+// Delete Account Confirmation
+function confirmDelete(userId, userName, userRole, noAnggota) {
+    Swal.fire({
+        title: 'Apakah Anda yakin?',
+        html: `
+            <div class="text-left">
+                <p class="mb-3">Anda akan menghapus akun:</p>
+                <div class="bg-gray-100 p-3 rounded-lg mb-3">
+                    <p><strong>Nama:</strong> ${userName}</p>
+                    <p><strong>Role:</strong> ${userRole.toUpperCase()}</p>
+                    <p><strong>No. Anggota:</strong> ${noAnggota}</p>
+                </div>
+                <div class="bg-red-50 border-l-4 border-red-500 p-3 text-red-700 text-sm">
+                    <strong>⚠️ PERINGATAN!</strong><br>
+                    Tindakan ini <strong>TIDAK DAPAT DIBATALKAN</strong> dan akan menghapus:<br>
+                    • Data profil dan akun<br>
+                    • Riwayat peminjaman buku<br>
+                    • Data denda (jika ada)<br>
+                    • Riwayat kunjungan<br>
+                    • Dan semua data terkait lainnya
+                </div>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus Permanen!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Menghapus...',
+                text: 'Mohon tunggu, sedang menghapus data akun',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            document.getElementById(`delete-form-${userId}`).submit();
+        }
+    });
+}
+
+// Import Modal Functions
+function openImportModal() {
+    document.getElementById('importModal').style.display = 'block';
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+}
+
+// Close modal when clicking outside (handled by onclick on overlay)
+
+// Show session messages
+@if(session('success'))
+Swal.fire({
+    title: 'Berhasil!',
+    text: '{{ session('success') }}',
+    icon: 'success',
+    confirmButtonColor: '#3085d6',
+    timer: 3000
+});
+@endif
+
+@if(session('error'))
+Swal.fire({
+    title: 'Gagal!',
+    text: '{{ session('error') }}',
+    icon: 'error',
+    confirmButtonColor: '#d33'
+});
+@endif
+</script>
 @endpush
 
 <style>
