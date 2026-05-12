@@ -233,7 +233,6 @@ class SirkulasiController extends Controller
                 throw new \Exception('Anggota sudah mencapai batas maksimal peminjaman (' . self::MAX_LOANS_PER_USER . ' buku).');
             }
             
-            // Check if member has unpaid fines
             // Check if member has unpaid fines - melalui relasi peminjaman
             $unpaidFines = Denda::whereHas('peminjaman', function($query) use ($request) {
                     $query->where('user_id', $request->user_id);
@@ -421,7 +420,7 @@ class SirkulasiController extends Controller
     }
 
     /**
-     * Get loan data as JSON - VERSI DIPERBAIKI
+     * Get loan data as JSON
      */
     public function getPeminjamanJson($id)
     {
@@ -600,7 +599,7 @@ class SirkulasiController extends Controller
     }
 
     /**
-     * Process book return - VERSI DIPERBAIKI
+     * Process book return - DIPERBAIKI untuk menggunakan route pembayaran.show
      */
     public function prosesPengembalian(Request $request)
     {
@@ -663,6 +662,7 @@ class SirkulasiController extends Controller
                 $denda = Denda::updateOrCreate(
                     ['peminjaman_id' => $peminjaman->id],
                     [
+                        'id_anggota' => $peminjaman->user_id,
                         'jumlah_denda' => $dendaTotal,
                         'denda_terlambat' => $dendaTerlambat,
                         'denda_kerusakan' => $dendaRusak,
@@ -676,10 +676,19 @@ class SirkulasiController extends Controller
                     ]
                 );
                 
-                // ✅ QRIS - Redirect ke halaman pembayaran
+                // ✅ QRIS - Redirect ke halaman pembayaran (menggunakan route pembayaran.show)
                 if ($request->payment_method === 'qris') {
                     DB::commit();
-                    $dendaId = $denda->id_denda ?? $denda->id;  // ← AMBIL ID YANG BENAR
+                    // Ambil ID denda yang benar (pakai id_denda atau id)
+                    $dendaId = $denda->id_denda ?? $denda->id;
+                    
+                    Log::info('QRIS Payment redirect', [
+                        'denda_id' => $dendaId,
+                        'peminjaman_id' => $peminjaman->id,
+                        'denda_total' => $dendaTotal
+                    ]);
+                    
+                    // Redirect ke halaman pembayaran yang menggunakan PaymentController via route pembayaran.show
                     return redirect()->route('petugas.sirkulasi.pembayaran.show', $dendaId)
                         ->with('success', '✅ Buku berhasil dikembalikan. Silakan lakukan pembayaran QRIS.');
                 }
@@ -852,118 +861,8 @@ class SirkulasiController extends Controller
     }
 
     /**
-     * Show payment page for fine
-     */
-    public function showPayment($id)
-    {
-        try {
-            $denda = Denda::with(['peminjaman.buku', 'anggota'])->findOrFail($id);
-            
-            if ($denda->isPaid()) {
-                return redirect()->route('petugas.sirkulasi.denda.index')
-                    ->with('error', 'Denda ini sudah dibayar.');
-            }
-            
-            return view('petugas.pages.sirkulasi.payment', compact('denda'));
-            
-        } catch (\Exception $e) {
-            Log::error('Error showing payment: ' . $e->getMessage());
-            return back()->with('error', 'Data denda tidak ditemukan.');
-        }
-    }
-
-    /**
-     * Process QRIS payment for fine
-     */
-    public function processQrisPayment($id)
-    {
-        try {
-            $denda = Denda::with(['peminjaman.buku', 'anggota'])->findOrFail($id);
-            
-            if ($denda->isPaid()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Denda sudah dibayar'
-                ]);
-            }
-            
-            if ($this->midtransService && method_exists($this->midtransService, 'createQrisPayment')) {
-                $result = $this->midtransService->createQrisPayment($denda, $denda->anggota);
-                return response()->json($result);
-            }
-            
-            // Fallback: generate QR code manual
-            $qrCode = $this->generateSimpleQrCode($denda);
-            return response()->json([
-                'success' => true,
-                'qr_code' => $qrCode,
-                'order_id' => 'QR-' . $denda->id_denda . '-' . time()
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('Error processing QRIS payment: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memproses pembayaran QRIS: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Check payment status for fine
-     */
-    public function checkPaymentStatus($id)
-    {
-        try {
-            $denda = Denda::findOrFail($id);
-            
-            if ($this->midtransService && method_exists($this->midtransService, 'checkPaymentStatus')) {
-                $result = $this->midtransService->checkPaymentStatus($denda);
-                
-                if (in_array($result['status'], ['settlement', 'capture'])) {
-                    // Update denda status
-                    $denda->update([
-                        'payment_status' => 'paid',
-                        'paid_at' => now(),
-                        'status' => 'lunas'
-                    ]);
-                    
-                    // Update related peminjaman
-                    if ($denda->peminjaman) {
-                        $denda->peminjaman->update([
-                            'status_verifikasi' => 'selesai'
-                        ]);
-                    }
-                    
-                    return response()->json([
-                        'success' => true,
-                        'paid' => true
-                    ]);
-                }
-                
-                return response()->json([
-                    'success' => true,
-                    'paid' => false,
-                    'status' => $result['status']
-                ]);
-            }
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Service pembayaran tidak tersedia'
-            ], 500);
-            
-        } catch (\Exception $e) {
-            Log::error('Error checking payment status: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengecek status pembayaran'
-            ], 500);
-        }
-    }
-
-    /**
-     * Show payment page with QR Code
+     * Show payment page with QR Code - Mengarah ke view pembayaran.blade.php
+     * Route ini dipanggil dari redirect setelah proses pengembalian QRIS
      */
     public function showPembayaran($id)
     {
@@ -984,7 +883,8 @@ class SirkulasiController extends Controller
     }
 
     /**
-     * Confirm payment manually
+     * Confirm payment manually (Tunai/Transfer)
+     * Route: POST /petugas/sirkulasi/pembayaran/{id}/confirm
      */
     public function confirmPembayaran(Request $request, $id)
     {
@@ -1017,7 +917,6 @@ class SirkulasiController extends Controller
                 'paid_at' => now(),
                 'confirmed_by' => Auth::id(),
                 'payment_method' => $request->metode
-                // 'tanggal_bayar' => now()
             ]);
             
             // Update peminjaman terkait
@@ -1288,72 +1187,6 @@ class SirkulasiController extends Controller
         }
         
         $buku->save();
-    }
-
-    /**
-     * Create fine record
-     */
-    private function createFineRecord($peminjaman, $request, $dendaTotal)
-    {
-        $paymentStatus = ($request->payment_method === 'tunai') ? 'paid' : 'pending';
-        $statusOld = ($request->payment_method === 'tunai') ? 'lunas' : 'pending';
-        $kodePembayaran = Denda::generateKodePembayaran();
-        
-        $keterangan = sprintf(
-            'Denda keterlambatan: Rp %s, Denda kerusakan: Rp %s',
-            number_format($request->denda_terlambat, 0, ',', '.'),
-            number_format($request->denda_rusak, 0, ',', '.')
-        );
-        
-        return Denda::create([
-            'peminjaman_id' => $peminjaman->id,
-            'id_anggota' => $peminjaman->user_id,
-            'jumlah_denda' => $dendaTotal,
-            'keterangan' => $keterangan,
-            'status' => $statusOld,
-            'payment_status' => $paymentStatus,
-            'payment_method' => $request->payment_method,
-            'kode_pembayaran' => $kodePembayaran,
-            'paid_at' => ($request->payment_method === 'tunai') ? now() : null,
-        ]);
-    }
-
-    /**
-     * Generate QR Code for denda
-     */
-    private function generateQrCodeForDenda($denda)
-    {
-        try {
-            // Simple QR code generation without package
-            $qrContent = json_encode([
-                'id' => $denda->id_denda,
-                'amount' => $denda->jumlah_denda,
-                'kode' => $denda->kode_pembayaran,
-                'timestamp' => time()
-            ]);
-            
-            $denda->update([
-                'qr_code_path' => 'data:application/json,' . urlencode($qrContent)
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::warning('Failed to generate QR code: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Generate simple QR code fallback
-     */
-    private function generateSimpleQrCode($denda)
-    {
-        $data = [
-            'type' => 'denda',
-            'id' => $denda->id_denda,
-            'amount' => $denda->jumlah_denda,
-            'kode' => $denda->kode_pembayaran
-        ];
-        
-        return 'https://quickchart.io/qr?text=' . urlencode(json_encode($data)) . '&size=200';
     }
 
     /**
