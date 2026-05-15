@@ -373,7 +373,7 @@
                                     <i class="fas fa-certificate"></i> Tugas Akhir
                                 </span>
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-biru/10 rounded-full text-[10px] md:text-xs text-biru">
-                                    <i class="fas fa-calendar-alt"></i> 2025
+                                    <i class="fas fa-calendar-alt"></i> 2026
                                 </span>
                             </div>
                         </div>
