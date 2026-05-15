@@ -34,8 +34,10 @@
             --biru: #3B82F6;
             --biru-dark: #2563EB;
             --hijau: #10B981;
+            --hijau-dark: #059669;
             --hitam: #1F2937;
             --putih: #FFFFFF;
+            --abu: #6B7280;
         }
         
         html {
@@ -193,6 +195,20 @@
             color: var(--oren);
         }
         
+        /* Project Card Style */
+        .project-card {
+            background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(249,115,22,0.05) 100%);
+            border-radius: 16px;
+            border-left: 4px solid var(--oren);
+            transition: all 0.3s ease;
+        }
+        
+        .project-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-left-color: var(--biru);
+        }
+        
         @media (max-width: 768px) {
             .feature-card {
                 padding: 1.5rem;
@@ -208,6 +224,9 @@
                 width: 95%;
                 margin: 20px auto;
             }
+            .project-card {
+                padding: 0.75rem 1rem !important;
+            }
         }
         
         /* Color utilities */
@@ -221,6 +240,7 @@
         .text-oren { color: #F97316; }
         .text-hijau { color: #10B981; }
         .text-hitam { color: #1F2937; }
+        .text-abu { color: #6B7280; }
         
         .hover\:bg-biru-dark:hover { background-color: #2563EB; }
         .hover\:bg-oren-dark:hover { background-color: #EA580C; }
@@ -262,8 +282,10 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4">
         <div class="flex items-center justify-between">
             <a href="#beranda" class="flex items-center gap-2 md:gap-3 group cursor-pointer">
-                <div class="w-8 h-8 md:w-12 md:h-12 rounded-xl bg-biru flex items-center justify-center shadow-lg transition-all group-hover:scale-105">
-                    <i class="fas fa-book text-white text-sm md:text-xl"></i>
+                <div class="w-8 h-8 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-lg transition-all group-hover:scale-105">
+                    <img src="{{ asset('storage/logo.jpg') }}" 
+                        alt="Logo Perpustakaan" 
+                        class="w-full h-full object-cover">
                 </div>
                 <div>
                     <span class="font-bold text-sm md:text-lg text-biru">TAMBANG ILMU</span>
@@ -324,6 +346,40 @@
                     Akses ribuan koleksi buku, modul pembelajaran, dan ebook dari mana saja. 
                     Bergabunglah dengan komunitas pembelajar di Perpustakaan Digital SMAN 1 Tambang.
                 </p>
+                
+                <!-- PROJECT CARD - DIPERINDAH -->
+                <div class="project-card p-3 md:p-4 mb-6 md:mb-8" data-aos="fade-up" data-aos-delay="100">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-biru to-oren rounded-xl flex items-center justify-center">
+                                <i class="fas fa-graduation-cap text-white text-sm md:text-base"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-xs md:text-sm font-semibold text-hitam mb-1">
+                                🎓 PROYEK TUGAS AKHIR S1
+                            </h4>
+                            <p class="text-xs md:text-sm text-abu leading-relaxed">
+                                <span class="font-medium text-biru">ILVI MAULIDYA NURULISA</span> (22076010)
+                            </p>
+                            <p class="text-xs text-abu mt-0.5">
+                                Program Studi Pendidikan Teknik Informatika
+                            </p>
+                            <p class="text-xs text-abu">
+                                Universitas Negeri Padang
+                            </p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-oren/10 rounded-full text-[10px] md:text-xs text-oren">
+                                    <i class="fas fa-certificate"></i> Tugas Akhir
+                                </span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-biru/10 rounded-full text-[10px] md:text-xs text-biru">
+                                    <i class="fas fa-calendar-alt"></i> 2025
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="flex flex-col sm:flex-row gap-3 md:gap-4">
                     <a href="#koleksi" class="btn-primary px-6 md:px-8 py-2.5 md:py-3 rounded-full font-medium text-sm md:text-base">
                         <i class="fas fa-book-open"></i> Jelajahi Koleksi
@@ -515,12 +571,16 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-8 md:mb-12">
             <div data-aos="fade-up">
                 <div class="flex items-center gap-2 mb-3 md:mb-4">
-                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-biru flex items-center justify-center">
-                        <i class="fas fa-book text-white text-sm md:text-base"></i>
-                    </div>
-                    <div>
-                        <span class="font-bold text-sm md:text-base text-biru">TAMBANG ILMU</span>
-                        <span class="text-[10px] md:text-xs text-gray-500 block">Perpustakaan Digital</span>
+                    <div class="flex items-center gap-2 mb-3 md:mb-4">
+                        <div class="w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden">
+                            <img src="{{ asset('storage/logo.jpg') }}" 
+                                alt="Logo Perpustakaan" 
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <span class="font-bold text-sm md:text-base text-biru">TAMBANG ILMU</span>
+                            <span class="text-[10px] md:text-xs text-gray-500 block">Perpustakaan Digital</span>
+                        </div>
                     </div>
                 </div>
                 <p class="text-hitam text-xs md:text-sm leading-relaxed">
@@ -580,8 +640,19 @@
             </div>
         </div>
         
-        <div class="border-t border-gray-200 pt-6 md:pt-8 text-center">
-            <p class="text-hitam text-xs md:text-sm">
+        <!-- FOOTER BAWAHAN - PROJECT INFO -->
+        <div class="border-t border-gray-200 pt-6 md:pt-8">
+            <div class="text-center mb-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-biru/5 to-oren/5 rounded-full mb-3">
+                    <i class="fas fa-graduation-cap text-oren text-xs"></i>
+                    <span class="text-[10px] md:text-xs text-abu font-medium">TUGAS AKHIR S1</span>
+                </div>
+                <p class="text-xs md:text-sm text-abu leading-relaxed max-w-2xl mx-auto">
+                    <span class="font-semibold text-biru">ILVI MAULIDYA NURULISA</span> (22076010) — 
+                    Program Studi Pendidikan Teknik Informatika, Universitas Negeri Padang
+                </p>
+            </div>
+            <p class="text-hitam text-xs md:text-sm text-center">
                 &copy; <span id="current-year"></span> Perpustakaan SMAN 1 Tambang | 
                 <span class="text-oren">TAMBANG ILMU</span> - Mencerdaskan Generasi
             </p>
