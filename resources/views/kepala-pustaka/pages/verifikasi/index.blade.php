@@ -220,39 +220,69 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @forelse($dendas as $index => $denda)
-                    <tr class="hover:bg-gray-50 transition-colors {{ $denda->status_verifikasi == 'pending' ? 'bg-yellow-50/50' : '' }}">
+                    @forelse($dendas as $index => $item)
+                    @php
+                        $peminjaman = $item->peminjaman;
+                        $anggota = $item->anggota;
+                        $buku = $peminjaman ? $peminjaman->buku : null;
+                        
+                        // Hitung keterlambatan
+                        $terlambat = 0;
+                        if ($peminjaman && $peminjaman->tgl_jatuh_tempo && $peminjaman->tanggal_pengembalian) {
+                            $jatuhTempo = \Carbon\Carbon::parse($peminjaman->tgl_jatuh_tempo);
+                            $kembali = \Carbon\Carbon::parse($peminjaman->tanggal_pengembalian);
+                            $terlambat = $kembali->gt($jatuhTempo) ? $jatuhTempo->diffInDays($kembali) : 0;
+                        }
+                        
+                        $kondisiText = $peminjaman->kondisi_kembali ?? 'baik';
+                        $kondisiLabel = match($kondisiText) {
+                            'baik' => 'Baik',
+                            'rusak_ringan' => 'Rusak Ringan',
+                            'rusak_berat' => 'Rusak Berat',
+                            'hilang' => 'Hilang',
+                            default => '-'
+                        };
+                        $kondisiClass = match($kondisiText) {
+                            'baik' => 'bg-green-100 text-green-700',
+                            'rusak_ringan' => 'bg-yellow-100 text-yellow-700',
+                            'rusak_berat' => 'bg-orange-100 text-orange-700',
+                            'hilang' => 'bg-red-100 text-red-700',
+                            default => 'bg-gray-100 text-gray-700'
+                        };
+                    @endphp
+                    <tr class="hover:bg-gray-50 transition-colors {{ $item->payment_status == 'pending' ? 'bg-yellow-50/50' : '' }}">
                         <td class="px-4 py-3">
-                            @if($denda->status_verifikasi == 'pending')
-                                <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" value="{{ $denda->id }}">
+                            @if($item->payment_status == 'pending')
+                                <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" value="{{ $item->id }}">
                             @endif
                         </td>
                         <td class="px-4 py-3 font-medium">{{ $dendas->firstItem() + $index }}</td>
+                        
                         <td class="px-4 py-3">
-                            <div class="font-medium">{{ $denda->created_at->format('d/m/Y') }}</div>
-                            <div class="text-xs text-gray-400">{{ $denda->created_at->format('H:i') }}</div>
+                            <div class="font-medium">{{ $item->created_at->format('d/m/Y') }}</div>
+                            <div class="text-xs text-gray-400">{{ $item->created_at->format('H:i') }}</div>
                         </td>
+                        
                         <td class="px-4 py-3">
-                            <div class="font-medium">{{ $denda->petugas->name ?? '-' }}</div>
-                            <div class="text-xs text-gray-400">{{ $denda->petugas->role ?? 'Petugas' }}</div>
+                            <div class="font-medium">{{ $peminjaman->petugas->name ?? '-' }}</div>
+                            <div class="text-xs text-gray-400">Petugas</div>
                         </td>
+                        
                         <td class="px-4 py-3">
-                            <div class="font-medium">{{ $denda->user->name ?? '-' }}</div>
-                            <div class="text-xs text-gray-400">{{ $denda->user->no_anggota ?? '-' }}</div>
+                            <div class="font-medium">{{ $anggota->name ?? $peminjaman->user->name ?? '-' }}</div>
+                            <div class="text-xs text-gray-400">{{ $anggota->no_anggota ?? $peminjaman->user->no_anggota ?? '-' }}</div>
                         </td>
+                        
                         <td class="px-4 py-3">
-                            <div class="font-medium line-clamp-1">{{ $denda->buku->judul ?? '-' }}</div>
-                            <div class="text-xs text-gray-400">{{ $denda->buku->pengarang ?? '-' }}</div>
+                            <div class="font-medium line-clamp-1">{{ $buku->judul ?? '-' }}</div>
+                            <div class="text-xs text-gray-400">{{ $buku->pengarang ?? '-' }}</div>
                         </td>
+                        
                         <td class="px-4 py-3 font-mono font-bold text-red-600">
-                            Rp {{ number_format($denda->denda_total, 0, ',', '.') }}
+                            Rp {{ number_format($item->jumlah_denda, 0, ',', '.') }}
                         </td>
+                        
                         <td class="px-4 py-3">
-                            @php
-                                $jatuhTempo = \Carbon\Carbon::parse($denda->tgl_jatuh_tempo);
-                                $kembali = \Carbon\Carbon::parse($denda->tanggal_pengembalian);
-                                $terlambat = $kembali->diffInDays($jatuhTempo);
-                            @endphp
                             <span class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -260,34 +290,20 @@
                                 {{ $terlambat }} hari
                             </span>
                         </td>
+                        
                         <td class="px-4 py-3">
-                            @php
-                                $kondisiClass = match($denda->kondisi_kembali) {
-                                    'baik' => 'bg-green-100 text-green-700',
-                                    'rusak_ringan' => 'bg-yellow-100 text-yellow-700',
-                                    'rusak_berat' => 'bg-orange-100 text-orange-700',
-                                    'hilang' => 'bg-red-100 text-red-700',
-                                    default => 'bg-gray-100 text-gray-700'
-                                };
-                                $kondisiText = match($denda->kondisi_kembali) {
-                                    'baik' => 'Baik',
-                                    'rusak_ringan' => 'Rusak Ringan',
-                                    'rusak_berat' => 'Rusak Berat',
-                                    'hilang' => 'Hilang',
-                                    default => '-'
-                                };
-                            @endphp
                             <span class="px-2 py-1 rounded-full text-xs font-medium {{ $kondisiClass }}">
-                                {{ $kondisiText }}
+                                {{ $kondisiLabel }}
                             </span>
                         </td>
+                        
                         <td class="px-4 py-3">
-                            @if($denda->status_verifikasi == 'pending')
+                            @if($item->payment_status == 'pending')
                                 <span class="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
                                     <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
                                     Pending
                                 </span>
-                            @elseif($denda->status_verifikasi == 'disetujui')
+                            @elseif($item->payment_status == 'paid')
                                 <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -303,9 +319,10 @@
                                 </span>
                             @endif
                         </td>
+                        
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-center gap-1">
-                                <a href="{{ route('kepala-pustaka.verifikasi.detail', $denda->id) }}" 
+                                <a href="{{ route('kepala-pustaka.verifikasi.detail', $item->id) }}" 
                                    class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors group"
                                    title="Detail">
                                     <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,9 +330,9 @@
                                     </svg>
                                 </a>
                                 
-                                @if($denda->status_verifikasi == 'pending')
+                                @if($item->payment_status == 'pending')
                                     <button type="button" 
-                                            onclick="openVerifikasiModal({{ $denda->id }}, {{ $denda->denda_total }})"
+                                            onclick="openVerifikasiModal({{ $item->id }}, {{ $item->jumlah_denda }})"
                                             class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors group"
                                             title="Verifikasi">
                                         <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,7 +368,7 @@
     </div>
 </div>
 
-{{-- MODAL VERIFIKASI (FIX CENTER + MODERN UI) --}}
+{{-- MODAL VERIFIKASI --}}
 <div id="verifikasiModal" class="fixed inset-0 z-50 hidden items-center justify-center">
     
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeVerifikasiModal()"></div>
@@ -561,7 +578,7 @@ function setStatus(status) {
 }
 
 // ============================================================
-// SUBMIT VERIFIKASI (DENGAN VALIDASI)
+// SUBMIT VERIFIKASI
 // ============================================================
 document.getElementById('verifikasiForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -721,7 +738,7 @@ async function verifikasiMassal(status) {
     }
 }
 
-// ESC CLOSE (HANYA SATU)
+// ESC CLOSE
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeVerifikasiModal();
 });

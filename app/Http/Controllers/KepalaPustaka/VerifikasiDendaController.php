@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Peminjaman;
 use App\Models\User;
+use App\Models\Denda;
 use App\Models\ActivityLog;
 use App\Models\Notifikasi;
 use Illuminate\Support\Facades\Auth;
@@ -19,20 +20,22 @@ class VerifikasiDendaController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Peminjaman::with(['user', 'buku', 'petugas', 'diverifikasiOleh'])
-            ->where('denda_total', '>', 0);
+        // ✅ PERBAIKAN: Ambil data dari tabel denda
+        $query = Denda::with(['peminjaman.user', 'peminjaman.buku', 'peminjaman.petugas', 'anggota'])
+            ->where('payment_status', '!=', 'paid');
         
         // Filter berdasarkan status
         if ($request->filled('status')) {
-            $query->where('status_verifikasi', $request->status);
+            $query->where('payment_status', $request->status);
         } else {
-            // Default: pending dulu, lalu sisanya
-            $query->orderByRaw("FIELD(status_verifikasi, 'pending', 'disetujui', 'ditolak')");
+            $query->where('payment_status', 'pending');
         }
         
-        // Filter berdasarkan petugas
+        // Filter berdasarkan petugas (dari relasi peminjaman)
         if ($request->filled('petugas')) {
-            $query->where('petugas_id', $request->petugas);
+            $query->whereHas('peminjaman', function($q) use ($request) {
+                $q->where('petugas_id', $request->petugas);
+            });
         }
         
         // Filter tanggal
@@ -46,34 +49,24 @@ class VerifikasiDendaController extends Controller
         
         // Filter nominal
         if ($request->filled('min_nominal')) {
-            $query->where('denda_total', '>=', $request->min_nominal);
+            $query->where('jumlah_denda', '>=', $request->min_nominal);
         }
         
         if ($request->filled('max_nominal')) {
-            $query->where('denda_total', '<=', $request->max_nominal);
+            $query->where('jumlah_denda', '<=', $request->max_nominal);
         }
         
         $dendas = $query->orderBy('created_at', 'desc')
             ->paginate(15)
             ->withQueryString();
         
-        // Statistik verifikasi REAL
+        // ✅ STATISTIK REAL dari tabel denda
         $statistik = [
-            'pending' => Peminjaman::where('status_verifikasi', 'pending')
-                ->where('denda_total', '>', 0)
-                ->count(),
-            'disetujui' => Peminjaman::where('status_verifikasi', 'disetujui')
-                ->where('denda_total', '>', 0)
-                ->count(),
-            'ditolak' => Peminjaman::where('status_verifikasi', 'ditolak')
-                ->where('denda_total', '>', 0)
-                ->count(),
-            'total_nominal_pending' => Peminjaman::where('status_verifikasi', 'pending')
-                ->where('denda_total', '>', 0)
-                ->sum('denda_total'),
-            'total_nominal_disetujui' => Peminjaman::where('status_verifikasi', 'disetujui')
-                ->where('denda_total', '>', 0)
-                ->sum('denda_total'),
+            'pending' => Denda::where('payment_status', 'pending')->count(),
+            'disetujui' => Denda::where('payment_status', 'paid')->count(),
+            'ditolak' => Denda::where('payment_status', 'failed')->count(),
+            'total_nominal_pending' => Denda::where('payment_status', 'pending')->sum('jumlah_denda'),
+            'total_nominal_disetujui' => Denda::where('payment_status', 'paid')->sum('jumlah_denda'),
         ];
         
         // Daftar petugas untuk filter
@@ -82,19 +75,23 @@ class VerifikasiDendaController extends Controller
         // Statistik per petugas
         $statistikPetugas = User::where('role', 'petugas')
             ->withCount([
-                'peminjaman as total_denda' => function ($q) {
-                    $q->where('denda_total', '>', 0);
+                'denda as total_denda' => function ($q) {
+                    $q->where('payment_status', '!=', 'paid');
                 },
-                'peminjaman as denda_pending' => function ($q) {
-                    $q->where('status_verifikasi', 'pending')
-                      ->where('denda_total', '>', 0);
+                'denda as denda_pending' => function ($q) {
+                    $q->where('payment_status', 'pending');
                 },
-                'peminjaman as denda_disetujui' => function ($q) {
-                    $q->where('status_verifikasi', 'disetujui')
-                      ->where('denda_total', '>', 0);
+                'denda as denda_disetujui' => function ($q) {
+                    $q->where('payment_status', 'paid');
                 }
             ])
-            ->get();
+            ->get()
+            ->map(function ($p) {
+                $p->total_nominal = Denda::where('confirmed_by', $p->id)
+                    ->where('payment_status', 'paid')
+                    ->sum('jumlah_denda');
+                return $p;
+            });
         
         return view('kepala-pustaka.pages.verifikasi.index', compact(
             'dendas', 
@@ -109,33 +106,29 @@ class VerifikasiDendaController extends Controller
      */
     public function show($id)
     {
-        $denda = Peminjaman::with([
-            'user', 
-            'buku', 
-            'petugas', 
-            'diverifikasiOleh',
+        $denda = Denda::with([
+            'peminjaman.user', 
+            'peminjaman.buku', 
+            'peminjaman.petugas',
+            'anggota'
         ])->findOrFail($id);
         
-        // Hitung keterlambatan
-        $jatuhTempo = Carbon::parse($denda->tgl_jatuh_tempo);
-        $kembali = Carbon::parse($denda->tanggal_pengembalian);
-        $denda->lambat_hari = $kembali->diffInDays($jatuhTempo);
+        $peminjaman = $denda->peminjaman;
+        $jatuhTempo = Carbon::parse($peminjaman->tgl_jatuh_tempo);
+        $kembali = Carbon::parse($peminjaman->tanggal_pengembalian);
+        $terlambat = $kembali->diffInDays($jatuhTempo);
         
-        // Hitung denda per hari (dari pengaturan)
-        $denda->denda_per_hari = $denda->lambat_hari > 0 ? $denda->denda / $denda->lambat_hari : 0;
-        
-        // Riwayat peminjaman anggota
-        $riwayatAnggota = Peminjaman::where('user_id', $denda->user_id)
+        $riwayatAnggota = Peminjaman::where('user_id', $peminjaman->user_id)
             ->with(['buku'])
             ->latest()
             ->limit(5)
             ->get();
         
-        return view('kepala-pustaka.pages.verifikasi.detail', compact('denda', 'riwayatAnggota'));
+        return view('kepala-pustaka.pages.verifikasi.detail', compact('denda', 'riwayatAnggota', 'terlambat'));
     }
 
     /**
-     * Proses verifikasi denda - FIXED! (Tidak otomatis ditolak)
+     * Proses verifikasi denda - FIXED!
      */
     public function verifikasi(Request $request, $id)
     {
@@ -148,42 +141,56 @@ class VerifikasiDendaController extends Controller
 
             DB::beginTransaction();
             
-            // ✅ FIX: Gunakan $id dari parameter
-            $peminjaman = Peminjaman::findOrFail($id);
+            $denda = Denda::findOrFail($id);
+            $peminjaman = $denda->peminjaman;
             
-            // Cek apakah sudah diverifikasi sebelumnya
-            if ($peminjaman->status_verifikasi != 'pending') {
+            if ($denda->payment_status != 'pending') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Denda ini sudah diverifikasi sebelumnya.'
+                    'message' => 'Denda ini sudah diproses sebelumnya.'
                 ], 400);
             }
 
-            $dataUpdate = [
-                'status_verifikasi' => $request->status,
-                'diverifikasi_oleh' => Auth::id(),
-                'diverifikasi_at' => now(),
-                'catatan_verifikasi' => $request->catatan
-            ];
-
-            // Jika nominal disetujui berbeda (untuk negosiasi)
-            if ($request->filled('nominal_setuju') && $request->status == 'disetujui') {
-                $dataUpdate['denda_total'] = $request->nominal_setuju;
-                $dataUpdate['denda_asli'] = $peminjaman->denda_total;
+            if ($request->status == 'disetujui') {
+                $nominal = $request->nominal_setuju ?? $denda->jumlah_denda;
+                
+                $denda->update([
+                    'payment_status' => 'paid',
+                    'status' => 'lunas',
+                    'paid_at' => now(),
+                    'confirmed_by' => Auth::id(),
+                ]);
+                
+                if ($peminjaman) {
+                    $peminjaman->update([
+                        'status_verifikasi' => 'disetujui'
+                    ]);
+                }
+            } else {
+                $denda->update([
+                    'payment_status' => 'failed',
+                    'status' => 'failed',
+                    'confirmed_by' => Auth::id(),
+                    'keterangan' => $request->catatan
+                ]);
+                
+                if ($peminjaman) {
+                    $peminjaman->update([
+                        'status_verifikasi' => 'ditolak',
+                        'catatan_verifikasi' => $request->catatan
+                    ]);
+                }
             }
 
-            $peminjaman->update($dataUpdate);
-
-            // Catat log aktivitas
             ActivityLog::create([
                 'user_id' => Auth::id(),
                 'role' => 'kepala_pustaka',
                 'action' => 'verifikasi_denda',
-                'model' => 'Peminjaman',
+                'model' => 'Denda',
                 'model_id' => $id,
                 'description' => Auth::user()->name . ' ' . 
                     ($request->status == 'disetujui' ? 'menyetujui' : 'menolak') . 
-                    ' denda Rp ' . number_format($peminjaman->denda_total, 0, ',', '.'),
+                    ' denda Rp ' . number_format($denda->jumlah_denda, 0, ',', '.'),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent()
             ]);
@@ -211,7 +218,7 @@ class VerifikasiDendaController extends Controller
     {
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'exists:peminjaman,id',
+            'ids.*' => 'exists:denda,id',
             'status' => 'required|in:disetujui,ditolak'
         ]);
 
@@ -223,30 +230,44 @@ class VerifikasiDendaController extends Controller
             $gagal = 0;
             
             foreach ($request->ids as $id) {
-                $peminjaman = Peminjaman::find($id);
+                $denda = Denda::find($id);
                 
-                // Hanya proses yang masih pending
-                if ($peminjaman && $peminjaman->status_verifikasi == 'pending') {
-                    $peminjaman->update([
-                        'status_verifikasi' => $request->status,
-                        'diverifikasi_oleh' => Auth::id(),
-                        'diverifikasi_at' => now(),
-                        'catatan_verifikasi' => 'Verifikasi massal oleh ' . Auth::user()->name
-                    ]);
+                if ($denda && $denda->payment_status == 'pending') {
+                    if ($request->status == 'disetujui') {
+                        $denda->update([
+                            'payment_status' => 'paid',
+                            'status' => 'lunas',
+                            'paid_at' => now(),
+                            'confirmed_by' => Auth::id(),
+                        ]);
+                        
+                        if ($denda->peminjaman) {
+                            $denda->peminjaman->update(['status_verifikasi' => 'disetujui']);
+                        }
+                    } else {
+                        $denda->update([
+                            'payment_status' => 'failed',
+                            'status' => 'failed',
+                            'confirmed_by' => Auth::id(),
+                        ]);
+                        
+                        if ($denda->peminjaman) {
+                            $denda->peminjaman->update(['status_verifikasi' => 'ditolak']);
+                        }
+                    }
                     
-                    $totalDenda += $peminjaman->denda_total;
+                    $totalDenda += $denda->jumlah_denda;
                     $count++;
                 } else {
                     $gagal++;
                 }
             }
             
-            // Catat log aktivitas massal
             ActivityLog::create([
                 'user_id' => Auth::id(),
                 'role' => 'kepala_pustaka',
                 'action' => 'verifikasi_massal',
-                'model' => 'Peminjaman',
+                'model' => 'Denda',
                 'description' => Auth::user()->name . ' melakukan verifikasi massal ' . 
                     $count . ' denda dengan status ' . $request->status . 
                     ($gagal > 0 ? " ({$gagal} sudah terverifikasi sebelumnya)" : ""),
@@ -278,39 +299,27 @@ class VerifikasiDendaController extends Controller
     }
 
     /**
-     * Statistik verifikasi per petugas (REAL DATA)
+     * Statistik verifikasi per petugas
      */
     public function statistikPetugas()
     {
         $petugas = User::where('role', 'petugas')
             ->withCount([
-                'peminjaman as total_transaksi' => function ($q) {
-                    $q->where('denda_total', '>', 0);
+                'denda as total_denda' => function ($q) {
+                    $q->where('payment_status', '!=', 'paid');
                 },
-                'peminjaman as denda_pending' => function ($q) {
-                    $q->where('status_verifikasi', 'pending')
-                      ->where('denda_total', '>', 0);
+                'denda as denda_pending' => function ($q) {
+                    $q->where('payment_status', 'pending');
                 },
-                'peminjaman as denda_disetujui' => function ($q) {
-                    $q->where('status_verifikasi', 'disetujui')
-                      ->where('denda_total', '>', 0);
-                },
-                'peminjaman as denda_ditolak' => function ($q) {
-                    $q->where('status_verifikasi', 'ditolak')
-                      ->where('denda_total', '>', 0);
+                'denda as denda_disetujui' => function ($q) {
+                    $q->where('payment_status', 'paid');
                 }
             ])
             ->get()
             ->map(function ($p) {
-                $p->total_nominal = Peminjaman::where('petugas_id', $p->id)
-                    ->where('status_verifikasi', 'disetujui')
-                    ->sum('denda_total');
-                
-                $p->rata_denda = Peminjaman::where('petugas_id', $p->id)
-                    ->where('status_verifikasi', 'disetujui')
-                    ->where('denda_total', '>', 0)
-                    ->avg('denda_total') ?? 0;
-                
+                $p->total_nominal = Denda::where('confirmed_by', $p->id)
+                    ->where('payment_status', 'paid')
+                    ->sum('jumlah_denda');
                 return $p;
             });
         
