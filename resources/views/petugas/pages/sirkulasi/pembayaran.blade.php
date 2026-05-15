@@ -156,10 +156,10 @@ let currentQrString = null;
 let statusCheckInterval = null;
 
 // ✅ Semua URL dari Blade disimpan ke konstanta — mencegah undefined di JS
-const GENERATE_URL = '{{ route("petugas.qris.generate", $denda->id_denda) }}';
+const GENERATE_URL = '{{ route("petugas.qris.generate", $denda->id) }}';
 const STATUS_URL   = '{{ route("petugas.qris.status") }}';
 const DENDA_INDEX  = '{{ route("petugas.sirkulasi.denda.index") }}';
-const CONFIRM_URL  = '{{ route("petugas.sirkulasi.pembayaran.confirm", $denda->id_denda) }}';
+const CONFIRM_URL  = '{{ route("petugas.sirkulasi.pembayaran.confirm", $denda->id) }}';
 const CSRF_TOKEN   = '{{ csrf_token() }}';
 
 // ─── Tab switching ────────────────────────────────────────────────────────────

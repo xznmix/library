@@ -91,7 +91,7 @@ $(document).ready(function() {
 
 function initPayment() {
     $.ajax({
-        url: '{{ route("petugas.sirkulasi.payment.qris", $denda->id_denda) }}',
+        url: '{{ route("petugas.sirkulasi.payment.qris", $denda->id) }}',
         method: 'POST',
         data: { _token: '{{ csrf_token() }}' },
         success: function(response) {
@@ -146,7 +146,7 @@ function startStatusCheck() {
 
 function checkPaymentStatus() {
     $.ajax({
-        url: '{{ route("petugas.sirkulasi.payment.status", $denda->id_denda) }}',
+        url: '{{ route("petugas.sirkulasi.payment.status", $denda->id) }}',
         method: 'GET',
         success: function(response) {
             if (response.paid === true) {

@@ -1,23 +1,35 @@
 <?php
-// app/Models/Denda.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class Denda extends Model
 {
     use HasFactory;
 
     protected $table = 'denda';
-    protected $primaryKey = 'id_denda';
 
-    // ✅ TAMBAHKAN 'id' untuk fallback jika perlu
-    protected $guarded = []; // Lebih aman daripada fillable jika banyak field
-    
-    // Atau tetap pakai fillable tapi lengkapi:
+    /*
+    |--------------------------------------------------------------------------
+    | PRIMARY KEY
+    |--------------------------------------------------------------------------
+    | Migration Anda: $table->id() → kolom "id" (bukan "id_denda")
+    | Jika Anda sudah terlanjur pakai id_denda di banyak tempat,
+    | accessor getIdDendaAttribute() di bawah akan menjadi bridge-nya.
+    */
+    protected $primaryKey = 'id';
+    public    $incrementing = true;
+    protected $keyType      = 'int';
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILLABLE
+    |--------------------------------------------------------------------------
+    */
     protected $fillable = [
         'peminjaman_id',
         'id_anggota',
@@ -37,121 +49,38 @@ class Denda extends Model
         'tanggal_bayar',
         'paid_at',
         'confirmed_by',
-        'created_by'
+        'payment_verified_by',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | CASTS
+    |--------------------------------------------------------------------------
+    */
     protected $casts = [
-        'id_denda' => 'integer',  // ✅ TAMBAHKAN
-        'jumlah_denda' => 'integer',
+        'jumlah_denda'    => 'integer',
         'denda_terlambat' => 'integer',
         'denda_kerusakan' => 'integer',
-        'hari_terlambat' => 'integer',
-        'tanggal_bayar' => 'datetime',
-        'paid_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',  // ✅ TAMBAHKAN
+        'hari_terlambat'  => 'integer',
+        'tanggal_bayar'   => 'datetime',
+        'paid_at'         => 'datetime',
+        'created_at'      => 'datetime',
+        'updated_at'      => 'datetime',
     ];
 
-    // ✅ TAMBAHKAN: Attribute untuk akses mudah
-    public function getAmountFormattedAttribute()
-    {
-        return 'Rp ' . number_format($this->jumlah_denda, 0, ',', '.');
-    }
-
-    // ✅ PERBAIKI: Method static untuk generate kode
-    public static function generateKodePembayaran()
-    {
-        $prefix = 'DND';
-        $date = date('Ymd');
-        $random = strtoupper(substr(uniqid(), -6));
-        return $prefix . '-' . $date . '-' . $random;
-    }
-
-    // ✅ PERBAIKI: Method cek status lebih lengkap
-    public function isPaid(): bool
-    {
-        return $this->payment_status === 'paid' || $this->status === 'lunas';
-    }
-
-    public function isPending(): bool
-    {
-        return $this->payment_status === 'pending' && $this->status !== 'lunas';
-    }
-
-    public function isFailed(): bool
-    {
-        return $this->payment_status === 'failed' || $this->status === 'failed';
-    }
-
-    // ✅ TAMBAHKAN: Method untuk mark as paid
-    public function markAsPaid(string $method = 'qris', int $confirmedBy = null): bool
-    {
-        return $this->update([
-            'payment_status' => 'paid',
-            'status' => 'lunas',
-            'paid_at' => now(),
-            'payment_method' => $method,
-            'confirmed_by' => $confirmedBy ?? Auth::id(),
-        ]);
-    }
-
-    // ✅ TAMBAHKAN: Method untuk get order id (fallback)
-    public function getOrderId(): string
-    {
-        return $this->midtrans_order_id ?? 'DENDA-' . ($this->id_denda ?? $this->id) . '-' . time();
-    }
-
-    // ✅ TAMBAHKAN: Accessor untuk formatted amount (pakai nama sama seperti di view)
-    public function getFormattedAmountAttribute()
-    {
-        return 'Rp ' . number_format($this->jumlah_denda, 0, ',', '.');
-    }
-
-    // Relasi
-    public function peminjaman()
-    {
-        return $this->belongsTo(Peminjaman::class, 'peminjaman_id');
-    }
-
-    public function anggota()
-    {
-        return $this->belongsTo(User::class, 'id_anggota');
-    }
-
-    public function confirmedBy()
-    {
-        return $this->belongsTo(User::class, 'confirmed_by');
-    }
-
-    public function createdBy()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    // ✅ TAMBAHKAN: Scope untuk filter
-    public function scopePending($query)
-    {
-        return $query->where('payment_status', 'pending');
-    }
-
-    public function scopePaid($query)
-    {
-        return $query->where('payment_status', 'paid');
-    }
-
-    // Boot method
-    protected static function boot()
+    /*
+    |=========================================================================
+    | BOOT — auto-generate kode_pembayaran & default status
+    |=========================================================================
+    */
+    protected static function boot(): void
     {
         parent::boot();
 
-        static::creating(function ($denda) {
+        static::creating(function (Denda $denda) {
             if (empty($denda->kode_pembayaran)) {
                 $denda->kode_pembayaran = self::generateKodePembayaran();
             }
-            if (empty($denda->created_by) && Auth::check()) {
-                $denda->created_by = Auth::id();
-            }
-            // ✅ TAMBAHKAN: Default status
             if (empty($denda->payment_status)) {
                 $denda->payment_status = 'pending';
             }
@@ -159,5 +88,163 @@ class Denda extends Model
                 $denda->status = 'pending';
             }
         });
+    }
+
+    /*
+    |=========================================================================
+    | RELASI
+    |=========================================================================
+    */
+
+    /**
+     * Peminjaman terkait
+     */
+    public function peminjaman()
+    {
+        return $this->belongsTo(Peminjaman::class, 'peminjaman_id', 'id');
+    }
+
+    /**
+     * Anggota / user yang kena denda
+     * (foreign key: id_anggota → users.id)
+     */
+    public function anggota()
+    {
+        return $this->belongsTo(User::class, 'id_anggota', 'id');
+    }
+
+    /**
+     * Petugas yang konfirmasi pembayaran
+     */
+    public function confirmedBy()
+    {
+        return $this->belongsTo(User::class, 'confirmed_by', 'id');
+    }
+
+    /*
+    |=========================================================================
+    | ACCESSORS
+    |=========================================================================
+    */
+
+    /**
+     * Alias: $denda->id_denda → supaya kode lama yang pakai id_denda tetap jalan.
+     * Contoh pemakaian: redirect()->route('...', $denda->id_denda)
+     */
+    public function getIdDendaAttribute(): int
+    {
+        return (int) $this->id;
+    }
+
+    /**
+     * Format rupiah untuk tampil di view.
+     * Pemakaian: {{ $denda->formatted_amount }}
+     */
+    public function getFormattedAmountAttribute(): string
+    {
+        return 'Rp ' . number_format((int) $this->jumlah_denda, 0, ',', '.');
+    }
+
+    /**
+     * Format rupiah versi dua (alias agar tidak breaking jika ada yang pakai ini).
+     * Pemakaian: {{ $denda->amount_formatted }}
+     */
+    public function getAmountFormattedAttribute(): string
+    {
+        return $this->formatted_amount;
+    }
+
+    /*
+    |=========================================================================
+    | QUERY SCOPES
+    |=========================================================================
+    */
+
+    /** Denda yang belum dibayar */
+    public function scopePending($query)
+    {
+        return $query->where('payment_status', 'pending');
+    }
+
+    /** Denda yang sudah lunas */
+    public function scopePaid($query)
+    {
+        return $query->where('payment_status', 'paid');
+    }
+
+    /** Denda yang gagal */
+    public function scopeFailed($query)
+    {
+        return $query->where('payment_status', 'failed');
+    }
+
+    /*
+    |=========================================================================
+    | STATUS METHODS
+    |=========================================================================
+    */
+
+    /** Cek apakah denda sudah lunas */
+    public function isPaid(): bool
+    {
+        return $this->payment_status === 'paid'
+            || $this->status === 'lunas';
+    }
+
+    /** Cek apakah denda masih pending */
+    public function isPending(): bool
+    {
+        return $this->payment_status === 'pending'
+            && $this->status !== 'lunas';
+    }
+
+    /** Cek apakah pembayaran gagal */
+    public function isFailed(): bool
+    {
+        return $this->payment_status === 'failed'
+            || $this->status === 'failed';
+    }
+
+    /*
+    |=========================================================================
+    | BUSINESS LOGIC METHODS
+    |=========================================================================
+    */
+
+    /**
+     * Tandai denda sebagai lunas.
+     * Dipakai di PaymentController::markAsPaid() dan confirmPembayaran().
+     */
+    public function markAsPaid(string $method = 'qris', ?int $confirmedBy = null): bool
+    {
+        return $this->update([
+            'payment_status' => 'paid',
+            'status'         => 'lunas',
+            'paid_at'        => now(),
+            'payment_method' => $method,
+            'confirmed_by'   => $confirmedBy ?? Auth::id(),
+        ]);
+    }
+
+    /**
+     * Ambil order_id Midtrans, fallback ke format manual jika belum ada.
+     * Dipakai di PaymentController::generateQRIS()
+     */
+    public function getOrderId(): string
+    {
+        return $this->midtrans_order_id
+            ?? ('DENDA-' . $this->id . '-' . time());
+    }
+
+    /**
+     * Generate kode pembayaran unik.
+     * Format: DND-20250515-AB12C3
+     */
+    public static function generateKodePembayaran(): string
+    {
+        $prefix = 'DND';
+        $date   = date('Ymd');
+        $random = strtoupper(substr(uniqid(), -6));
+        return "{$prefix}-{$date}-{$random}";
     }
 }

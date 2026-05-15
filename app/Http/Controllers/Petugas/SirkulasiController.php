@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 // Service imports - tetap dipertahankan
@@ -599,119 +600,120 @@ class SirkulasiController extends Controller
     }
 
     /**
-     * Process book return - DIPERBAIKI untuk menggunakan route pembayaran.show
+     * Process book return - FULL FIXED VERSION
      */
     public function prosesPengembalian(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
-                'peminjaman_id' => 'required|exists:peminjaman,id',
+                'peminjaman_id'        => 'required|exists:peminjaman,id',
                 'tanggal_pengembalian' => 'required|date',
-                'kondisi_kembali' => 'required|in:baik,rusak_ringan,rusak_berat,hilang',
-                'catatan_kondisi' => 'nullable|string|max:500',
-                'payment_method' => 'required|in:qris,tunai',
-                'denda_terlambat' => 'required|integer|min:0',
-                'denda_rusak' => 'required|integer|min:0',
+                'kondisi_kembali'      => 'required|in:baik,rusak_ringan,rusak_berat,hilang',
+                'catatan_kondisi'      => 'nullable|string|max:500',
+                'payment_method'       => 'required|in:qris,tunai',
+                'denda_terlambat'      => 'required|integer|min:0',
+                'denda_rusak'          => 'required|integer|min:0',
             ]);
-            
+
             if ($validator->fails()) {
                 return redirect()
                     ->route('petugas.sirkulasi.pengembalian.index')
                     ->with('error', 'Validasi gagal: ' . implode(', ', $validator->errors()->all()));
             }
-            
+
             DB::beginTransaction();
-            
-            $peminjaman = Peminjaman::with(['buku', 'user'])->lockForUpdate()->findOrFail($request->peminjaman_id);
-            
+
+            $peminjaman = Peminjaman::with(['buku', 'user'])
+                ->lockForUpdate()
+                ->findOrFail($request->peminjaman_id);
+
             if ($peminjaman->status_pinjam === 'dikembalikan') {
                 throw new \Exception('Peminjaman ini sudah dikembalikan sebelumnya.');
             }
-            
+
             $dendaTerlambat = (int) $request->denda_terlambat;
-            $dendaRusak = (int) $request->denda_rusak;
-            $dendaTotal = $dendaTerlambat + $dendaRusak;
-            
-            $jatuhTempo = Carbon::parse($peminjaman->tgl_jatuh_tempo);
-            $tanggalKembali = Carbon::parse($request->tanggal_pengembalian);
-            $hariTerlambat = $tanggalKembali->gt($jatuhTempo) ? $jatuhTempo->diffInDays($tanggalKembali) : 0;
-            
+            $dendaRusak     = (int) $request->denda_rusak;
+            $dendaTotal     = $dendaTerlambat + $dendaRusak;
+
+            $jatuhTempo      = Carbon::parse($peminjaman->tgl_jatuh_tempo);
+            $tanggalKembali  = Carbon::parse($request->tanggal_pengembalian);
+            $hariTerlambat   = $tanggalKembali->gt($jatuhTempo)
+                ? (int) $jatuhTempo->diffInDays($tanggalKembali)
+                : 0;
+
+            // Update stok buku
             $this->updateBookStock($peminjaman->buku, $request->kondisi_kembali);
-            
+
+            // Update peminjaman
             $peminjaman->tanggal_pengembalian = $request->tanggal_pengembalian;
-            $peminjaman->status_pinjam = 'dikembalikan';
-            $peminjaman->kondisi_kembali = $request->kondisi_kembali;
-            $peminjaman->catatan_kondisi = $request->catatan_kondisi;
-            $peminjaman->updated_by = Auth::id();
-            $peminjaman->petugas_id = Auth::id();
-            
-            $peminjaman->updateDendaTotal($dendaTerlambat, $dendaRusak, $hariTerlambat);
-            
-            if ($dendaTotal > 0 && $request->payment_method === 'tunai') {
-                $peminjaman->status_verifikasi = 'disetujui';
-            } elseif ($dendaTotal > 0 && $request->payment_method === 'qris') {
-                $peminjaman->status_verifikasi = 'pending';
-            } else {
-                $peminjaman->status_verifikasi = 'disetujui';
+            $peminjaman->status_pinjam        = 'dikembalikan';
+            $peminjaman->kondisi_kembali      = $request->kondisi_kembali;
+            $peminjaman->catatan_kondisi      = $request->catatan_kondisi;
+            $peminjaman->updated_by           = Auth::id();
+            $peminjaman->petugas_id           = Auth::id();
+
+            // Simpan total denda ke kolom denda_total jika ada
+            if (Schema::hasColumn('peminjaman', 'denda_total')) {
+                $peminjaman->denda_total = $dendaTotal;
             }
-            
+
+            $peminjaman->status_verifikasi = ($dendaTotal > 0 && $request->payment_method === 'qris')
+                ? 'pending'
+                : 'disetujui';
+
             $peminjaman->save();
-            
-            // Update atau create denda record
+
+            // Buat/update record Denda jika ada denda
             if ($dendaTotal > 0) {
                 $denda = Denda::updateOrCreate(
                     ['peminjaman_id' => $peminjaman->id],
                     [
-                        'id_anggota' => $peminjaman->user_id,
-                        'jumlah_denda' => $dendaTotal,
+                        'id_anggota'      => $peminjaman->user_id,
+                        'jumlah_denda'    => $dendaTotal,
                         'denda_terlambat' => $dendaTerlambat,
                         'denda_kerusakan' => $dendaRusak,
-                        'hari_terlambat' => $hariTerlambat,
-                        'keterangan' => $request->catatan_kondisi,
-                        'status' => $request->payment_method === 'tunai' ? 'lunas' : 'pending',
-                        'payment_status' => $request->payment_method === 'tunai' ? 'paid' : 'pending',
-                        'payment_method' => $request->payment_method,
-                        'confirmed_by' => $request->payment_method === 'tunai' ? Auth::id() : null,
-                        'paid_at' => $request->payment_method === 'tunai' ? now() : null,
+                        'hari_terlambat'  => $hariTerlambat,
+                        'keterangan'      => $request->catatan_kondisi,
+                        'status'          => $request->payment_method === 'tunai' ? 'lunas'  : 'pending',
+                        'payment_status'  => $request->payment_method === 'tunai' ? 'paid'   : 'pending',
+                        'payment_method'  => $request->payment_method,
+                        'confirmed_by'    => $request->payment_method === 'tunai' ? Auth::id() : null,
+                        'paid_at'         => $request->payment_method === 'tunai' ? now()     : null,
                     ]
                 );
-                
-                // ✅ QRIS - Redirect ke halaman pembayaran (menggunakan route pembayaran.show)
+
+                DB::commit();
+
+                // Gunakan $denda->id (bukan id_denda)
+                $dendaId = $denda->id;
+
                 if ($request->payment_method === 'qris') {
-                    DB::commit();
-                    // Ambil ID denda yang benar (pakai id_denda atau id)
-                    $dendaId = $denda->id_denda ?? $denda->id;
-                    
-                    Log::info('QRIS Payment redirect', [
-                        'denda_id' => $dendaId,
-                        'peminjaman_id' => $peminjaman->id,
-                        'denda_total' => $dendaTotal
-                    ]);
-                    
-                    // Redirect ke halaman pembayaran yang menggunakan PaymentController via route pembayaran.show
-                    return redirect()->route('petugas.sirkulasi.pembayaran.show', $dendaId)
+                    return redirect()
+                        ->route('petugas.sirkulasi.pembayaran.show', $dendaId)
                         ->with('success', '✅ Buku berhasil dikembalikan. Silakan lakukan pembayaran QRIS.');
                 }
-                
-                // ✅ TUNAI - Redirect ke daftar denda
-                if ($request->payment_method === 'tunai') {
-                    DB::commit();
-                    return redirect()
-                        ->route('petugas.sirkulasi.denda.index')
-                        ->with('success', '✅ Buku berhasil dikembalikan. Pembayaran denda tunai telah dicatat.');
-                }
+
+                // Tunai → langsung ke daftar denda
+                return redirect()
+                    ->route('petugas.sirkulasi.denda.index')
+                    ->with('success', '✅ Buku berhasil dikembalikan. Pembayaran denda tunai telah dicatat.');
             }
-            
+
+            // Tidak ada denda
             DB::commit();
-            
+
+            Cache::forget('peminjaman_statistik');
+
             return redirect()
                 ->route('petugas.sirkulasi.pengembalian.index')
                 ->with('success', '✅ Buku berhasil dikembalikan. Terima kasih!');
-                
+
         } catch (\Exception $e) {
             DB::rollback();
-            Log::error('Gagal memproses pengembalian: ' . $e->getMessage());
-            
+            Log::error('Gagal memproses pengembalian: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return redirect()
                 ->route('petugas.sirkulasi.pengembalian.index')
                 ->with('error', 'Gagal memproses pengembalian: ' . $e->getMessage());
