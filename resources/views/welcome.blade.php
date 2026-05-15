@@ -328,8 +328,8 @@
                     <a href="#koleksi" class="btn-primary px-6 md:px-8 py-2.5 md:py-3 rounded-full font-medium text-sm md:text-base">
                         <i class="fas fa-book-open"></i> Jelajahi Koleksi
                     </a>
-                    <a href="{{ route('register') }}" class="btn-secondary px-6 md:px-8 py-2.5 md:py-3 rounded-full font-medium text-sm md:text-base">
-                        <i class="fas fa-user-plus"></i> Daftar Gratis
+                    <a href="{{ route('login') }}" class="btn-secondary px-6 md:px-8 py-2.5 md:py-3 rounded-full font-medium text-sm md:text-base">
+                        <i class="fas fa-user-plus"></i> Masuk ke Akun Saya
                     </a>
                 </div>
             </div>

@@ -111,7 +111,7 @@
 
 </div>
 
-{{-- MODAL PENGEMBALIAN (DIPERBAIKI - BISA DISCROLL) --}}
+{{-- MODAL PENGEMBALIAN --}}
 <div id="pengembalianModal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
     <div class="relative h-full overflow-y-auto">
@@ -140,12 +140,17 @@ function tutupModal() {
 }
 
 function prosesPengembalian(id) {
+    console.log('Processing return for ID:', id);
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     
     fetch(`/petugas/sirkulasi/peminjaman/${id}/json`)
-        .then(r => r.json())
+        .then(r => {
+            console.log('Response status:', r.status);
+            return r.json();
+        })
         .then(data => {
+            console.log('Data received:', data);
             if (data.error) {
                 alert(data.message || 'Error loading data');
                 tutupModal();
@@ -154,13 +159,15 @@ function prosesPengembalian(id) {
             renderForm(data);
         })
         .catch(err => {
-            console.error('Error:', err);
+            console.error('Fetch error:', err);
             alert('Gagal memuat data: ' + err.message);
             tutupModal();
         });
 }
 
 function renderForm(data) {
+    console.log('Rendering form with data:', data);
+    
     if (!data || !data.buku || !data.user) {
         document.getElementById('modalContent').innerHTML = `
             <div class="text-center py-10 text-red-600">
@@ -172,7 +179,7 @@ function renderForm(data) {
     }
     
     let dendaTerlambat = data.denda_terlambat || 0;
-    let hargaBuku = data.buku.harga || 0;
+    let hargaBuku = data.buku.harga || 50000;
     
     const today = new Date().toISOString().slice(0,10);
     
@@ -222,10 +229,6 @@ function renderForm(data) {
                                 <span class="text-gray-500">🔖 Kode Eksemplar</span>
                                 <p class="font-mono text-sm">${escapeHtml(data.kode_eksemplar)}</p>
                             </div>
-                            <div>
-                                <span class="text-gray-500">📖 ISBN</span>
-                                <p class="text-sm">${escapeHtml(data.buku.isbn || '-')}</p>
-                            </div>
                         </div>
                     </div>
                     
@@ -262,10 +265,10 @@ function renderForm(data) {
                         <label class="block mb-2 font-medium text-gray-700">💳 Metode Pembayaran</label>
                         <div class="flex gap-3">
                             <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 flex-1 transition">
-                                <input type="radio" name="payment_method" value="tunai" checked> 💰 Tunai
+                                <input type="radio" name="payment_method" value="tunai" checked onchange="togglePaymentMethod('tunai')"> 💰 Tunai
                             </label>
                             <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 flex-1 transition">
-                                <input type="radio" name="payment_method" value="qris"> 📱 QRIS
+                                <input type="radio" name="payment_method" value="qris" onchange="togglePaymentMethod('qris')"> 📱 QRIS
                             </label>
                         </div>
                     </div>
@@ -360,6 +363,10 @@ function hitungDendaRusak(kondisi, hargaBuku) {
     if (dendaRusakRow) {
         dendaRusakRow.style.display = dendaRusak > 0 ? 'flex' : 'none';
     }
+}
+
+function togglePaymentMethod(method) {
+    console.log('Payment method selected:', method);
 }
 
 function escapeHtml(str) {
