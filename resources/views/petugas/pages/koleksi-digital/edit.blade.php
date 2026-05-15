@@ -231,19 +231,28 @@
                         <p class="text-xs text-gray-500 mt-1">Jumlah yang bisa dipinjam bersamaan</p>
                     </div>
 
-                    {{-- Durasi Pinjam --}}
+                    {{-- Durasi Pinjam (LOCKED 7 HARI) --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Durasi Pinjam (Jam)
+                            Durasi Pinjam <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" 
-                               name="durasi_pinjam_hari" 
-                               id="durasi_pinjam"
-                               value="{{ old('durasi_pinjam_hari', $buku->durasi_pinjam_hari) }}"
-                               min="1" 
-                               max="168"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-200">
-                        <p class="text-xs text-gray-500 mt-1">Default 24 jam (1 hari)</p>
+                        <div class="relative">
+                            <input type="number" 
+                                   name="durasi_pinjam_hari" 
+                                   id="durasi_pinjam"
+                                   value="7"
+                                   readonly
+                                   disabled
+                                   class="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed">
+                            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-blue-600 mt-1">
+                            🔒 Durasi tetap 7 hari (tidak dapat diubah)
+                        </p>
                     </div>
 
                     {{-- Akses Digital --}}
@@ -361,18 +370,28 @@ if (jenisKoleksi) {
             hintText.innerHTML = '📚 E-Book memerlukan pinjam dan memiliki batasan lisensi.';
             if (jumlahLisensi) {
                 jumlahLisensi.required = true;
+                jumlahLisensi.disabled = false;
                 if (!jumlahLisensi.value) jumlahLisensi.value = 3;
             }
             if (durasiPinjam) {
                 durasiPinjam.required = true;
-                if (!durasiPinjam.value) durasiPinjam.value = 24;
+                durasiPinjam.disabled = true;
+                durasiPinjam.value = 7;
             }
         } else {
             lisensiSection.style.display = 'none';
             const selectedText = jenisKoleksi.options[jenisKoleksi.selectedIndex].text;
             hintText.innerHTML = '⬇️ ' + selectedText + ' dapat langsung di-download tanpa pinjam.';
-            if (jumlahLisensi) jumlahLisensi.required = false;
-            if (durasiPinjam) durasiPinjam.required = false;
+            if (jumlahLisensi) {
+                jumlahLisensi.required = false;
+                jumlahLisensi.disabled = true;
+                jumlahLisensi.value = '';
+            }
+            if (durasiPinjam) {
+                durasiPinjam.required = false;
+                durasiPinjam.disabled = true;
+                durasiPinjam.value = '';
+            }
         }
     }
     
@@ -384,6 +403,12 @@ if (jenisKoleksi) {
         lisensiSection.style.display = 'none';
         if (jumlahLisensi) jumlahLisensi.required = false;
         if (durasiPinjam) durasiPinjam.required = false;
+    } else {
+        // Untuk ebook, set durasi pinjam ke 7
+        if (durasiPinjam) {
+            durasiPinjam.value = 7;
+            durasiPinjam.disabled = true;
+        }
     }
 }
 </script>

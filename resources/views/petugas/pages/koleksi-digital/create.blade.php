@@ -255,6 +255,7 @@
                                    id="durasi_pinjam"
                                    value="7"
                                    readonly
+                                   disabled
                                    class="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed">
                             <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
