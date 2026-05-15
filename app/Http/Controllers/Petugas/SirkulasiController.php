@@ -434,7 +434,7 @@ class SirkulasiController extends Controller
             $dendaTerlambat = 0;
             
             if ($today->gt($jatuhTempo) && $peminjaman->status_pinjam !== 'dikembalikan') {
-                $hariTerlambat = (int) $jatuhTempo->diffInDays($today);
+                $hariTerlambat = (int) $today->diffInDays($jatuhTempo);
                 $dendaPerHari = (int) ($peminjaman->buku->denda_per_hari ?? 1000);
                 $dendaTerlambat = (int) ($hariTerlambat * $dendaPerHari);
             }
@@ -559,7 +559,7 @@ class SirkulasiController extends Controller
             $hariTerlambat = 0;
             
             if ($today->gt($jatuhTempo)) {
-                $hariTerlambat = (int) $jatuhTempo->diffInDays($today);
+                $hariTerlambat = (int) $today->diffInDays($jatuhTempo);
                 $dendaPerHari = $peminjaman->buku->denda_per_hari ?? self::DEFAULT_FINE_PER_DAY;
                 $dendaTerlambat = (int) ($hariTerlambat * $dendaPerHari);
             }

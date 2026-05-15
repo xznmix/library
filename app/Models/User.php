@@ -121,37 +121,6 @@ class User extends Authenticatable
     }
 
     /**
-     * ✅ RELASI KE TABEL DENDA (DITAMBAHKAN UNTUK VERIFIKASI)
-     */
-    
-    /**
-     * Relasi ke Denda (sebagai verifikator/penyetuju)
-     * Digunakan untuk statistik verifikasi per petugas di Kepala Pustaka
-     */
-    public function denda()
-    {
-        return $this->hasMany(Denda::class, 'confirmed_by');
-    }
-
-    /**
-     * Relasi ke Denda (sebagai petugas yang mencatat denda)
-     * Digunakan untuk melihat denda yang dicatat oleh petugas tertentu
-     */
-    public function dendaSebagaiPetugas()
-    {
-        return $this->hasMany(Denda::class, 'created_by');
-    }
-
-    /**
-     * Relasi ke Denda (sebagai anggota yang kena denda)
-     * Digunakan untuk melihat riwayat denda anggota
-     */
-    public function dendas()
-    {
-        return $this->hasMany(Denda::class, 'id_anggota');
-    }
-
-    /**
      * ===========================
      * SCOPES (FILTERS)
      * ===========================
@@ -287,8 +256,8 @@ class User extends Authenticatable
         } elseif ($this->status_anggota === 'rejected') {
             return 'rejected';
         }
-        return 'pending';
-    }
+    return 'pending';
+}
 
     public function getFotoKtpUrlAttribute()
     {

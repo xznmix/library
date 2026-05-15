@@ -21,15 +21,12 @@ class DashboardController extends Controller
         $totalAnggota = User::whereIn('role', ['siswa', 'guru', 'pegawai', 'umum'])->count();
         
         // Denda pending (belum diverifikasi)
-        $dendaPending = Peminjaman::where('status_verifikasi', 'pending')
-            ->where('denda_total', '>', 0)
-            ->count();
+        $dendaPending = \App\Models\Denda::where('payment_status', 'pending')->count();
             
         // Total denda bulan ini (yang sudah disetujui)
-        $totalDendaBulanIni = Peminjaman::whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->where('status_verifikasi', 'disetujui')
-            ->sum('denda_total');
+       $totalDendaBulanIni = \App\Models\Denda::where('payment_status', 'paid')
+        ->whereMonth('paid_at', now()->month)
+        ->sum('jumlah_denda');
         
         // Kunjungan hari ini
         $kunjunganHariIni = Kunjungan::whereDate('tanggal', today())->count();
