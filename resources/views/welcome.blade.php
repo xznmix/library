@@ -283,7 +283,7 @@
         <div class="flex items-center justify-between">
             <a href="#beranda" class="flex items-center gap-2 md:gap-3 group cursor-pointer">
                 <div class="w-8 h-8 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-lg transition-all group-hover:scale-105">
-                    <img src="{{ asset('storage/logo.jpg') }}" 
+                    <img src="{{ asset('images/logo.jpg') }}" 
                         alt="Logo Perpustakaan" 
                         class="w-full h-full object-cover">
                 </div>
@@ -573,7 +573,7 @@
                 <div class="flex items-center gap-2 mb-3 md:mb-4">
                     <div class="flex items-center gap-2 mb-3 md:mb-4">
                         <div class="w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden">
-                            <img src="{{ asset('storage/logo.jpg') }}" 
+                            <img src="{{ asset('images/logo.jpg') }}" 
                                 alt="Logo Perpustakaan" 
                                 class="w-full h-full object-cover">
                         </div>
