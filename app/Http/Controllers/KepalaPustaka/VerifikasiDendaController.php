@@ -122,7 +122,7 @@ class VerifikasiDendaController extends Controller
         $denda->lambat_hari = $kembali->diffInDays($jatuhTempo);
         
         // Hitung denda per hari (dari pengaturan)
-        $denda->denda_per_hari = $denda->denda / max($denda->lambat_hari, 1);
+        $denda->denda_per_hari = $denda->lambat_hari > 0 ? $denda->denda / $denda->lambat_hari : 0;
         
         // Riwayat peminjaman anggota
         $riwayatAnggota = Peminjaman::where('user_id', $denda->user_id)
@@ -135,7 +135,7 @@ class VerifikasiDendaController extends Controller
     }
 
     /**
-     * Proses verifikasi denda
+     * Proses verifikasi denda - FIXED!
      */
     public function verifikasi(Request $request, $id)
     {
@@ -148,6 +148,7 @@ class VerifikasiDendaController extends Controller
 
             DB::beginTransaction();
             
+            // ✅ FIX: Gunakan $id dari parameter, bukan dari request
             $peminjaman = Peminjaman::findOrFail($id);
             
             // Cek apakah sudah diverifikasi sebelumnya
@@ -191,7 +192,7 @@ class VerifikasiDendaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $request->status == 'disetujui' ? 'Denda berhasil disetujui.' : 'Denda ditolak.'
+                'message' => $request->status == 'disetujui' ? '✅ Denda berhasil disetujui.' : '❌ Denda ditolak.'
             ]);
 
         } catch (\Exception $e) {
@@ -225,24 +226,16 @@ class VerifikasiDendaController extends Controller
                 $peminjaman = Peminjaman::find($id);
                 
                 // Hanya proses yang masih pending
-                if ($peminjaman->status_verifikasi == 'pending') {
+                if ($peminjaman && $peminjaman->status_verifikasi == 'pending') {
                     $peminjaman->update([
                         'status_verifikasi' => $request->status,
                         'diverifikasi_oleh' => Auth::id(),
                         'diverifikasi_at' => now(),
-                        'catatan_verifikasi' => 'Verifikasi massal'
+                        'catatan_verifikasi' => 'Verifikasi massal oleh ' . Auth::user()->name
                     ]);
                     
                     $totalDenda += $peminjaman->denda_total;
                     $count++;
-                    
-                    // Notifikasi untuk petugas
-                    Notifikasi::create([
-                        'user_id' => $peminjaman->petugas_id,
-                        'judul' => 'Denda Diverifikasi Massal',
-                        'isi' => 'Denda anda telah diverifikasi massal dengan status: ' . $request->status,
-                        'type' => 'info'
-                    ]);
                 } else {
                     $gagal++;
                 }

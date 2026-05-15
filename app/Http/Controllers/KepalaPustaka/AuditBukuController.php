@@ -51,9 +51,9 @@ class AuditBukuController extends Controller
         }
     }
 
-    /* =========================
-     * STOCK OPNAME (AJAX)
-     * ========================= */
+    /**
+     * STOCK OPNAME (AJAX) - FIXED
+     */
     public function stockOpname(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -63,7 +63,10 @@ class AuditBukuController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->jsonError($validator->errors()->first(), 422);
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first()
+            ], 422);
         }
 
         DB::beginTransaction();
@@ -72,17 +75,53 @@ class AuditBukuController extends Controller
             $buku = Buku::findOrFail($request->buku_id);
             $stokSistem = $buku->stok_tersedia;
 
-            $this->updateStok($buku, $request->stok_fisik);
-            $this->createLogOpname($buku, $request, $stokSistem);
-            $this->completeAudit($buku->id);
+            // Update stok
+            if ($request->stok_fisik < $stokSistem) {
+                $buku->stok_hilang += ($stokSistem - $request->stok_fisik);
+            } elseif ($request->stok_fisik > $stokSistem) {
+                $buku->stok_tersedia = $request->stok_fisik;
+            } else {
+                $buku->stok_tersedia = $request->stok_fisik;
+            }
+            
+            $buku->stok_tersedia = $request->stok_fisik;
+            $buku->save();
+
+            // Create log
+            StockOpnameLog::create([
+                'buku_id' => $buku->id,
+                'user_id' => Auth::id(),
+                'stok_sistem' => $stokSistem,
+                'stok_fisik' => $request->stok_fisik,
+                'selisih' => abs($stokSistem - $request->stok_fisik),
+                'keterangan' => $request->keterangan
+            ]);
+
+            // Complete audit queue
+            $audit = AuditSchedule::where('buku_id', $buku->id)
+                ->where('status', 'in_progress')
+                ->first();
+
+            if ($audit) {
+                $audit->update([
+                    'status' => 'completed',
+                    'completed_date' => now()
+                ]);
+            }
 
             DB::commit();
 
-            return $this->jsonSuccess('Stock opname berhasil disimpan!');
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Stock opname berhasil disimpan!'
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->jsonError($e->getMessage(), 500);
+            return response()->json([
+                'success' => false,
+                'message' => '❌ Gagal: ' . $e->getMessage()
+            ], 500);
         }
     }
 
