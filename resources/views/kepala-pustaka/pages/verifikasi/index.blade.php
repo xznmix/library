@@ -521,7 +521,7 @@ function openVerifikasiModal(id, maxDenda) {
         "💰 Denda asli: Rp " + new Intl.NumberFormat('id-ID').format(maxDenda);
 
     setStatus('disetujui');
-    document.getElementById('verifikasiForm').action = `/kepala-pustaka/verifikasi/${id}`;
+    document.getElementById('verifikasiForm').action = `/kepala-pustaka/verifikasi/${currentDendaId}`;
 }
 
 function closeVerifikasiModal() {

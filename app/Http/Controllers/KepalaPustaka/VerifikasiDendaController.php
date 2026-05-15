@@ -135,7 +135,7 @@ class VerifikasiDendaController extends Controller
     }
 
     /**
-     * Proses verifikasi denda - FIXED!
+     * Proses verifikasi denda - FIXED! (Tidak otomatis ditolak)
      */
     public function verifikasi(Request $request, $id)
     {
@@ -148,7 +148,7 @@ class VerifikasiDendaController extends Controller
 
             DB::beginTransaction();
             
-            // ✅ FIX: Gunakan $id dari parameter, bukan dari request
+            // ✅ FIX: Gunakan $id dari parameter
             $peminjaman = Peminjaman::findOrFail($id);
             
             // Cek apakah sudah diverifikasi sebelumnya
