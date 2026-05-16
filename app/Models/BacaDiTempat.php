@@ -35,7 +35,7 @@ class BacaDiTempat extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'anggota_id');  // ← foreign key: anggota_id
+        return $this->belongsTo(User::class, 'user_id');  // ← foreign key: anggota_id
     }
     
     /**

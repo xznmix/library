@@ -88,7 +88,7 @@ class BacaDiTempatController extends Controller
             }
             
             // Cek apakah sedang baca buku lain (gunakan anggota_id sesuai database)
-            $sedangBaca = BacaDiTempat::where('anggota_id', $user->id)  // ← diubah ke anggota_id
+            $sedangBaca = BacaDiTempat::where('user_id', $user->id) 
                 ->where('status', 'sedang_baca')
                 ->first();
                 
@@ -98,7 +98,7 @@ class BacaDiTempatController extends Controller
             
             // Simpan data (gunakan anggota_id sesuai database)
             $baca = BacaDiTempat::create([
-                'anggota_id' => $user->id,  // ← diubah ke anggota_id
+                'user_id' => $user->id,  // ← diubah ke anggota_id
                 'buku_id' => $buku->id,
                 'barcode_buku' => $buku->barcode,
                 'no_anggota' => $user->no_anggota,
@@ -176,7 +176,7 @@ class BacaDiTempatController extends Controller
             // Tambah poin ke anggota
             if (class_exists(PoinAnggota::class)) {
                 PoinAnggota::tambahPoin(
-                    $baca->anggota_id,
+                    $baca->user_id,
                     $totalPoin,
                     "Baca di tempat: {$baca->buku->judul} selama {$durasi} menit",
                     'baca_ditempat_' . $baca->id
