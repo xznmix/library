@@ -10,7 +10,7 @@ class BacaDiTempat extends Model
     protected $table = 'baca_di_tempat';
     
     protected $fillable = [
-        'anggota_id',           // ← menggunakan anggota_id (sesuai database)
+        'user_id',
         'buku_id', 
         'barcode_buku', 
         'no_anggota',

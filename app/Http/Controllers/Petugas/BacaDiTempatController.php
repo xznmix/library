@@ -98,7 +98,7 @@ class BacaDiTempatController extends Controller
             
             // Simpan data (gunakan anggota_id sesuai database)
             $baca = BacaDiTempat::create([
-                'user_id' => $user->id,  // ← diubah ke anggota_id
+                'user_id' => $user->id,
                 'buku_id' => $buku->id,
                 'barcode_buku' => $buku->barcode,
                 'no_anggota' => $user->no_anggota,
