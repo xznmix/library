@@ -18,16 +18,13 @@ class LaporanController extends Controller
      */
     public function peminjaman(Request $request)
     {
-        // Filter periode
         $periode = $request->periode ?? 'bulan_ini';
         $startDate = $this->getStartDate($periode, $request);
         $endDate = $this->getEndDate($periode, $request);
         
-        // Query peminjaman dalam periode
         $query = Peminjaman::with(['user', 'buku', 'petugas'])
             ->whereBetween('created_at', [$startDate, $endDate]);
         
-        // Statistik
         $totalPeminjaman = $query->count();
         
         $tepatWaktu = (clone $query)->where('status_pinjam', 'dikembalikan')
@@ -42,10 +39,8 @@ class LaporanController extends Controller
         $hariDalamPeriode = max($startDate->diffInDays($endDate) + 1, 1);
         $rataPerHari = round($totalPeminjaman / $hariDalamPeriode, 1);
         
-        // Data peminjaman untuk tabel (limit 10)
         $peminjaman = $query->orderBy('created_at', 'desc')->limit(10)->get();
         
-        // Data grafik harian (7 hari terakhir)
         $labelsHarian = [];
         $dataHarian = [];
         
@@ -55,7 +50,6 @@ class LaporanController extends Controller
             $dataHarian[] = Peminjaman::whereDate('created_at', $tanggal)->count();
         }
         
-        // Data kategori buku (berdasarkan peminjaman periode ini)
         $kategoriData = DB::table('peminjaman')
             ->join('buku', 'peminjaman.buku_id', '=', 'buku.id')
             ->join('kategori_buku', 'buku.kategori_id', '=', 'kategori_buku.id')
@@ -90,10 +84,8 @@ class LaporanController extends Controller
      */
     public function kunjungan(Request $request)
     {
-        // Filter tahun
         $tahun = $request->tahun ?? now()->year;
         
-        // Statistik kunjungan
         $totalKunjungan = Kunjungan::whereYear('tanggal', $tahun)->count();
         $kunjunganSiswa = Kunjungan::whereYear('tanggal', $tahun)
             ->where('jenis', 'siswa')
@@ -103,9 +95,8 @@ class LaporanController extends Controller
             ->count();
         
         $hariDalamTahun = Carbon::create($tahun, 12, 31)->dayOfYear;
-        $rataPerHari = round($totalKunjungan / $hariDalamTahun, 1);
+        $rataPerHari = $totalKunjungan > 0 ? round($totalKunjungan / $hariDalamTahun, 1) : 0;
         
-        // Data grafik harian (7 hari terakhir)
         $labelsHarian = [];
         $dataHarian = [];
         
@@ -115,7 +106,6 @@ class LaporanController extends Controller
             $dataHarian[] = Kunjungan::whereDate('tanggal', $tanggal)->count();
         }
         
-        // Data kunjungan per jam (jam sibuk)
         $labelsJam = [];
         $dataJam = [];
         
@@ -127,7 +117,6 @@ class LaporanController extends Controller
                 ->count();
         }
         
-        // Data kunjungan harian untuk tabel (10 hari terakhir)
         $kunjunganHarian = Kunjungan::select(
                 DB::raw('DATE(tanggal) as tanggal'),
                 DB::raw('SUM(CASE WHEN jenis = "siswa" THEN 1 ELSE 0 END) as siswa'),
@@ -142,7 +131,6 @@ class LaporanController extends Controller
             ->limit(10)
             ->get();
         
-        // Heatmap data (simulasi dari data real)
         $heatmapData = $this->getHeatmapData($tahun);
         
         return view('pimpinan.pages.laporan.kunjungan', compact(
@@ -161,7 +149,7 @@ class LaporanController extends Controller
     }
 
     /**
-     * Laporan Keuangan (Denda)
+     * Laporan Keuangan (Denda) - FIXED
      */
     public function keuangan(Request $request)
     {
@@ -191,22 +179,46 @@ class LaporanController extends Controller
             ->where('denda_total', '>', 0)
             ->sum('denda_total');
         
-        // Data untuk grafik bulanan
-        $dataTerlambat = [];
-        $dataRusak = [];
+        // Data untuk tabel bulanan
+        $dendaBulanan = [];
+        $totalDendaTerlambat = 0;
+        $totalDendaRusak = 0;
         
-        foreach ($bulanLabels as $index => $bulan) {
-            $bulanNum = $index + 1;
-            
-            $dataTerlambat[] = Peminjaman::whereMonth('created_at', $bulanNum)
+        for ($i = 1; $i <= 12; $i++) {
+            $dendaTerlambat = Peminjaman::whereMonth('created_at', $i)
                 ->whereYear('created_at', $tahun)
                 ->where('status_verifikasi', 'disetujui')
                 ->sum('denda');
             
-            $dataRusak[] = Peminjaman::whereMonth('created_at', $bulanNum)
+            $dendaRusakSum = Peminjaman::whereMonth('created_at', $i)
                 ->whereYear('created_at', $tahun)
                 ->where('status_verifikasi', 'disetujui')
                 ->sum('denda_rusak');
+            
+            $total = $dendaTerlambat + $dendaRusakSum;
+            
+            $totalDendaTerlambat += $dendaTerlambat;
+            $totalDendaRusak += $dendaRusakSum;
+            
+            $transaksi = Peminjaman::whereMonth('created_at', $i)
+                ->whereYear('created_at', $tahun)
+                ->where('denda_total', '>', 0)
+                ->count();
+            
+            $verifikasi = $transaksi > 0 ? round(Peminjaman::whereMonth('created_at', $i)
+                ->whereYear('created_at', $tahun)
+                ->where('status_verifikasi', 'disetujui')
+                ->where('denda_total', '>', 0)
+                ->count() / $transaksi * 100, 1) : 0;
+            
+            $dendaBulanan[] = (object)[
+                'bulan' => $bulanLabels[$i-1],
+                'transaksi' => $transaksi,
+                'denda_terlambat' => $dendaTerlambat,
+                'denda_rusak' => $dendaRusakSum,
+                'total' => $total,
+                'verifikasi' => $verifikasi
+            ];
         }
         
         // Data verifikasi
@@ -228,96 +240,30 @@ class LaporanController extends Controller
         $persenPending = $totalSemua > 0 ? round(($totalPending / $totalSemua) * 100, 1) : 0;
         $persenDitolak = $totalSemua > 0 ? round(($totalDitolak / $totalSemua) * 100, 1) : 0;
         
-        // Data tabel bulanan (hanya bulan yang memiliki transaksi)
-        $dendaBulanan = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $dendaTerlambat = Peminjaman::whereMonth('created_at', $i)
-                ->whereYear('created_at', $tahun)
-                ->where('status_verifikasi', 'disetujui')
-                ->sum('denda');
-            
-            $dendaRusak = Peminjaman::whereMonth('created_at', $i)
-                ->whereYear('created_at', $tahun)
-                ->where('status_verifikasi', 'disetujui')
-                ->sum('denda_rusak');
-            
-            $total = $dendaTerlambat + $dendaRusak;
-            
-            if ($total > 0) {
-                $transaksi = Peminjaman::whereMonth('created_at', $i)
-                    ->whereYear('created_at', $tahun)
-                    ->where('denda_total', '>', 0)
-                    ->count();
-                
-                $verifikasi = $transaksi > 0 ? round(Peminjaman::whereMonth('created_at', $i)
-                    ->whereYear('created_at', $tahun)
-                    ->where('status_verifikasi', 'disetujui')
-                    ->where('denda_total', '>', 0)
-                    ->count() / $transaksi * 100, 1) : 0;
-                
-                $dendaBulanan[] = (object)[
-                    'bulan' => $bulanLabels[$i-1],
-                    'transaksi' => $transaksi,
-                    'denda_terlambat' => $dendaTerlambat,
-                    'denda_rusak' => $dendaRusak,
-                    'total' => $total,
-                    'verifikasi' => $verifikasi
-                ];
-            }
-        }
-        
         // Komposisi denda
-        $totalDendaTerlambat = array_sum($dataTerlambat);
-        $totalDendaRusak = array_sum($dataRusak);
         $persenTerlambat = $totalDendaTahun > 0 ? round(($totalDendaTerlambat / $totalDendaTahun) * 100, 1) : 0;
         $persenRusak = $totalDendaTahun > 0 ? round(($totalDendaRusak / $totalDendaTahun) * 100, 1) : 0;
-        $persenLainnya = max(0, 100 - $persenTerlambat - $persenRusak);
         
         return view('pimpinan.pages.laporan.keuangan', compact(
             'totalDendaTahun',
             'dendaBulanIni',
             'rataDenda',
             'dendaPendingTotal',
-            'bulanLabels',
-            'dataTerlambat',
-            'dataRusak',
+            'dendaBulanan',
             'totalDisetujui',
             'totalPending',
             'totalDitolak',
             'persenDisetujui',
             'persenPending',
             'persenDitolak',
-            'dendaBulanan',
             'persenTerlambat',
             'persenRusak',
-            'persenLainnya',
+            'totalDendaTerlambat',
+            'totalDendaRusak',
             'tahun'
         ));
     }
 
-    /**
-     * Export Controller - Implementasi real
-     */
-    public function export($jenis, $format)
-    {
-        try {
-            switch ($jenis) {
-                case 'peminjaman':
-                    return $this->exportPeminjaman($format);
-                case 'kunjungan':
-                    return $this->exportKunjungan($format);
-                case 'keuangan':
-                    return $this->exportKeuangan($format);
-                case 'kinerja':
-                    return $this->exportKinerja($format);
-                default:
-                    return redirect()->back()->with('error', 'Jenis laporan tidak ditemukan');
-            }
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal mengexport data: ' . $e->getMessage());
-        }
-    }
-    
     /**
      * Helper untuk mendapatkan start date
      */
@@ -371,7 +317,7 @@ class LaporanController extends Controller
         for ($hari = 0; $hari < 7; $hari++) {
             for ($jam = 7; $jam <= 16; $jam++) {
                 $heatmap[$hari][$jam] = Kunjungan::whereYear('tanggal', $tahun)
-                    ->whereRaw('DAYOFWEEK(tanggal) = ?', [$hari + 2]) // MySQL: 1=Sun, 2=Mon
+                    ->whereRaw('DAYOFWEEK(tanggal) = ?', [$hari + 2])
                     ->whereTime('jam_masuk', '>=', sprintf('%02d:00:00', $jam))
                     ->whereTime('jam_masuk', '<', sprintf('%02d:00:00', $jam + 1))
                     ->count();
@@ -379,39 +325,5 @@ class LaporanController extends Controller
         }
         
         return $heatmap;
-    }
-    
-    /**
-     * Export Peminjaman
-     */
-    private function exportPeminjaman($format)
-    {
-        // Implementasi export sesuai kebutuhan
-        // Bisa menggunakan Maatwebsite Excel atau DOMPDF
-        return redirect()->back()->with('info', "Export peminjaman format {$format} akan segera tersedia");
-    }
-    
-    /**
-     * Export Kunjungan
-     */
-    private function exportKunjungan($format)
-    {
-        return redirect()->back()->with('info', "Export kunjungan format {$format} akan segera tersedia");
-    }
-    
-    /**
-     * Export Keuangan
-     */
-    private function exportKeuangan($format)
-    {
-        return redirect()->back()->with('info', "Export keuangan format {$format} akan segera tersedia");
-    }
-    
-    /**
-     * Export Kinerja
-     */
-    private function exportKinerja($format)
-    {
-        return redirect()->back()->with('info', "Export kinerja format {$format} akan segera tersedia");
     }
 }
