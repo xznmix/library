@@ -10,12 +10,17 @@ use App\Models\User;
 use App\Models\Kunjungan;
 use App\Models\ActivityLog;
 use App\Models\KategoriBuku;
-use App\Models\Notifikasi;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+// Import Exports
+use App\Exports\DendaExport;
+use App\Exports\PeminjamanExport;
+use App\Exports\KunjunganExport;
+use App\Exports\ActivitiesExport;
 
 class LaporanController extends Controller
 {
@@ -25,54 +30,40 @@ class LaporanController extends Controller
     public function denda(Request $request)
     {
         try {
-            // Set periode default
             $periode = $request->periode ?? 'bulan_ini';
             $startDate = $this->getStartDateFromPeriode($periode, $request);
             $endDate = $this->getEndDateFromPeriode($periode, $request);
             
-            // Base query
             $query = Peminjaman::with(['user', 'buku', 'petugas', 'diverifikasiOleh'])
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->where('denda_total', '>', 0);
             
-            // Filter status
             if ($request->filled('status')) {
                 $query->where('status_verifikasi', $request->status);
             }
             
-            // Filter petugas
             if ($request->filled('petugas_id')) {
                 $query->where('petugas_id', $request->petugas_id);
             }
             
-            // Get data dengan pagination
             $dendas = $query->orderBy('created_at', 'desc')
                 ->paginate(20)
                 ->withQueryString();
             
-            // ========== AMBIL SEMUA DATA TANPA PAGINATION UNTUK STATISTIK ==========
             $allData = (clone $query)->get();
             
-            // ========== STATISTIK REAL ==========
             $totalDenda = $allData->sum('denda_total');
             $totalTransaksi = $allData->count();
             $rataDenda = $totalTransaksi > 0 ? $totalDenda / $totalTransaksi : 0;
             $dendaTertinggi = $allData->max('denda_total');
             
-            // Komposisi denda
             $totalDendaTerlambat = $allData->sum('denda');
             $totalDendaRusak = $allData->sum('denda_rusak');
             
-            // ========== GRAFIK HARIAN (30 hari terakhir) ==========
             $grafikHarian = $this->getGrafikDendaHarian($startDate, $endDate);
-            
-            // ========== GRAFIK PER PETUGAS ==========
             $grafikPetugas = $this->getGrafikDendaPerPetugas($startDate, $endDate);
-            
-            // ========== STATISTIK PER BULAN ==========
             $statistikBulanan = $this->getStatistikBulanan($startDate, $endDate);
             
-            // ========== 10 DENDA TERBESAR ==========
             $dendaTerbesar = Peminjaman::with(['user', 'buku', 'petugas'])
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->where('denda_total', '>', 0)
@@ -80,7 +71,6 @@ class LaporanController extends Controller
                 ->limit(10)
                 ->get();
             
-            // ========== STATISTIK VERIFIKASI ==========
             $verifikasi = [
                 'pending' => Peminjaman::whereBetween('created_at', [$startDate, $endDate])
                     ->where('status_verifikasi', 'pending')
@@ -96,7 +86,6 @@ class LaporanController extends Controller
                     ->count(),
             ];
             
-            // Daftar petugas untuk filter
             $petugas = User::where('role', 'petugas')->get(['id', 'name']);
             
             return view('kepala-pustaka.pages.laporan.denda', compact(
@@ -130,22 +119,18 @@ class LaporanController extends Controller
         try {
             $query = ActivityLog::with('user');
             
-            // Filter role
             if ($request->filled('role')) {
                 $query->where('role', $request->role);
             }
             
-            // Filter aksi
             if ($request->filled('action')) {
                 $query->where('action', $request->action);
             }
             
-            // Filter user
             if ($request->filled('user_id')) {
                 $query->where('user_id', $request->user_id);
             }
             
-            // Filter tanggal
             if ($request->filled('start_date')) {
                 $query->whereDate('created_at', '>=', $request->start_date);
             }
@@ -156,7 +141,6 @@ class LaporanController extends Controller
             
             $aktivitas = $query->latest()->paginate(30)->withQueryString();
             
-            // Statistik aktivitas
             $statistik = [
                 'hari_ini' => ActivityLog::whereDate('created_at', today())->count(),
                 'minggu_ini' => ActivityLog::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
@@ -164,7 +148,6 @@ class LaporanController extends Controller
                 'total' => ActivityLog::count(),
             ];
             
-            // Top 5 user paling aktif
             $userAktif = ActivityLog::select('user_id', DB::raw('count(*) as total'))
                 ->with('user')
                 ->groupBy('user_id')
@@ -172,10 +155,7 @@ class LaporanController extends Controller
                 ->limit(5)
                 ->get();
             
-            // Daftar user untuk filter
             $users = User::whereIn('role', ['admin', 'petugas', 'kepala_pustaka'])->get(['id', 'name', 'role']);
-            
-            // Daftar aksi unik
             $aksiList = ActivityLog::distinct()->pluck('action');
             
             return view('kepala-pustaka.pages.laporan.aktivitas', compact(
@@ -197,18 +177,15 @@ class LaporanController extends Controller
     public function peminjaman(Request $request)
     {
         try {
-            // Filter periode
             $tahun = $request->tahun ?? now()->year;
             $bulan = $request->bulan ?? null;
             $status = $request->status ?? null;
             $jenis = $request->jenis ?? null;
             
-            // Validasi tahun
             if ($tahun < 2000 || $tahun > now()->year + 1) {
                 $tahun = now()->year;
             }
             
-            // Base query untuk statistik
             $baseQuery = Peminjaman::whereYear('created_at', $tahun)
                 ->when($bulan, function($q) use ($bulan) {
                     $q->whereMonth('created_at', $bulan);
@@ -222,7 +199,6 @@ class LaporanController extends Controller
                     });
                 });
             
-            // ========== STATISTIK UTAMA ==========
             $totalPeminjaman = (clone $baseQuery)->count();
             $sedangDipinjam = Peminjaman::whereIn('status_pinjam', ['dipinjam', 'terlambat'])->count();
             
@@ -235,10 +211,8 @@ class LaporanController extends Controller
                 ->where('status_pinjam', 'terlambat')
                 ->count();
             
-            // ========== GRAFIK PER BULAN ==========
             $grafikBulanan = $this->getGrafikPeminjamanBulanan($tahun, $status, $jenis);
             
-            // ========== BUKU TERPOPULER (CACHED) ==========
             $cacheKey = "buku_populer_{$tahun}_{$bulan}_{$status}_{$jenis}";
             $bukuPopuler = Cache::remember($cacheKey, 3600, function() use ($tahun, $bulan, $status, $jenis) {
                 $query = Buku::withCount(['peminjaman' => function ($q) use ($tahun, $bulan, $status, $jenis) {
@@ -262,7 +236,6 @@ class LaporanController extends Controller
                 return $query;
             });
             
-            // ========== ANGGOTA TERAKTIF ==========
             $anggotaAktif = User::whereIn('role', ['siswa', 'guru', 'pegawai', 'umum'])
                 ->withCount(['peminjaman' => function ($q) use ($tahun, $bulan, $status) {
                     $q->whereYear('created_at', $tahun);
@@ -277,7 +250,6 @@ class LaporanController extends Controller
                 ->limit(10)
                 ->get();
             
-            // ========== STATISTIK PER KATEGORI ==========
             $statistikKategori = KategoriBuku::withCount(['buku'])
                 ->withCount(['buku as peminjaman_count' => function($q) use ($tahun, $bulan, $status, $jenis) {
                     $q->join('peminjaman', 'buku.id', '=', 'peminjaman.buku_id')
@@ -296,7 +268,6 @@ class LaporanController extends Controller
                 }])
                 ->get();
             
-            // ========== STATISTIK PER JENIS ANGGOTA ==========
             $statistikJenis = [
                 'siswa' => (clone $baseQuery)->whereHas('user', fn($q) => $q->where('jenis', 'siswa'))->count(),
                 'guru' => (clone $baseQuery)->whereHas('user', fn($q) => $q->where('jenis', 'guru'))->count(),
@@ -304,7 +275,6 @@ class LaporanController extends Controller
                 'umum' => (clone $baseQuery)->whereHas('user', fn($q) => $q->where('jenis', 'umum'))->count(),
             ];
             
-            // ========== DATA PEMINJAMAN ==========
             $peminjaman = Peminjaman::with(['user', 'buku', 'petugas'])
                 ->whereYear('created_at', $tahun)
                 ->when($bulan, function($q) use ($bulan) {
@@ -352,7 +322,6 @@ class LaporanController extends Controller
         try {
             $tahun = $request->tahun ?? now()->year;
             
-            // ========== GRAFIK KUNJUNGAN PER BULAN ==========
             $kunjunganBulanan = Kunjungan::select(
                     DB::raw('MONTH(tanggal) as bulan'),
                     DB::raw('COUNT(*) as total')
@@ -372,13 +341,11 @@ class LaporanController extends Controller
                     return $item;
                 });
             
-            // ========== STATISTIK ==========
             $totalKunjungan = $kunjunganBulanan->sum('total');
             $rataPerBulan = $kunjunganBulanan->avg('total');
             $bulanTertinggi = $kunjunganBulanan->sortByDesc('total')->first();
             $bulanTerendah = $kunjunganBulanan->sortBy('total')->first();
             
-            // ========== KUNJUNGAN PER HARI (7 HARI TERAKHIR) ==========
             $kunjunganHarian = [];
             for ($i = 6; $i >= 0; $i--) {
                 $tanggal = now()->subDays($i);
@@ -390,7 +357,6 @@ class LaporanController extends Controller
                 ];
             }
             
-            // ========== STATISTIK PER JENIS ANGGOTA ==========
             $kunjunganPerJenis = Kunjungan::select('jenis_anggota', DB::raw('COUNT(*) as total'))
                 ->whereYear('tanggal', $tahun)
                 ->groupBy('jenis_anggota')
@@ -399,20 +365,18 @@ class LaporanController extends Controller
                     return [$item->jenis_anggota ?? 'umum' => $item->total];
                 });
             
-            // ========== TREN KUNJUNGAN (12 BULAN) ==========
             $trenKunjungan = [
                 'labels' => $kunjunganBulanan->pluck('nama_bulan'),
                 'data' => $kunjunganBulanan->pluck('total')
             ];
             
-            // ========== STATISTIK PER HARI (RATA-RATA) ==========
             $rataPerHari = [];
             for ($i = 0; $i <= 6; $i++) {
                 $hari = now()->startOfWeek()->addDays($i);
                 $namaHari = $hari->isoFormat('dddd');
                 $rataPerHari[$namaHari] = Kunjungan::whereRaw('DAYOFWEEK(tanggal) = ?', [$i + 1])
                     ->whereYear('tanggal', $tahun)
-                    ->count() / 52; // Rata-rata per minggu
+                    ->count() / 52;
             }
             
             return view('kepala-pustaka.pages.laporan.kunjungan', compact(
@@ -434,7 +398,7 @@ class LaporanController extends Controller
     }
 
     /**
-     * ========== EXPORT FUNCTIONS ==========
+     * ========== EXPORT FUNCTIONS (FULLY IMPLEMENTED) ==========
      */
 
     /**
@@ -446,23 +410,18 @@ class LaporanController extends Controller
             $startDate = $this->getStartDateFromRequest($request);
             $endDate = $this->getEndDateFromRequest($request);
             
-            $query = Peminjaman::with(['user', 'buku', 'petugas'])
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->where('denda_total', '>', 0);
+            $exportRequest = new Request([
+                'start_date' => $startDate->format('Y-m-d'),
+                'end_date' => $endDate->format('Y-m-d'),
+                'status' => $request->status,
+            ]);
             
-            if ($request->filled('status')) {
-                $query->where('status_verifikasi', $request->status);
-            }
+            $filename = 'laporan-denda-' . $startDate->format('Ymd') . '-' . $endDate->format('Ymd') . '.xlsx';
             
-            $data = $query->orderBy('created_at', 'desc')->get();
-            
-            // TODO: Implement Excel export dengan Maatwebsite\Excel
-            // return Excel::download(new DendaExport($data), "laporan-denda-{$startDate->format('Ymd')}-{$endDate->format('Ymd')}.xlsx");
-            
-            return redirect()->back()->with('info', 'Fitur export Excel sedang dalam pengembangan');
+            return Excel::download(new DendaExport($exportRequest), $filename);
             
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal export: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal export Excel: ' . $e->getMessage());
         }
     }
 
@@ -475,7 +434,7 @@ class LaporanController extends Controller
             $startDate = $this->getStartDateFromRequest($request);
             $endDate = $this->getEndDateFromRequest($request);
             
-            $query = Peminjaman::with(['user', 'buku', 'petugas'])
+            $query = Peminjaman::with(['user', 'buku'])
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->where('denda_total', '>', 0);
             
@@ -488,14 +447,17 @@ class LaporanController extends Controller
             $totalDenda = $data->sum('denda_total');
             $totalTransaksi = $data->count();
             
-            // TODO: Implement PDF export dengan Barryvdh\DomPDF
-            // $pdf = PDF::loadView('kepala-pustaka.exports.pdf.denda', compact('data', 'totalDenda', 'totalTransaksi', 'startDate', 'endDate'));
-            // return $pdf->download("laporan-denda-{$startDate->format('Ymd')}-{$endDate->format('Ymd')}.pdf");
+            // Pastikan folder view ada
+            $pdf = Pdf::loadView('kepala-pustaka.exports.pdf.denda', compact(
+                'data', 'totalDenda', 'totalTransaksi', 'startDate', 'endDate'
+            ));
             
-            return redirect()->back()->with('info', 'Fitur export PDF sedang dalam pengembangan');
+            $pdf->setPaper('A4', 'landscape');
+            
+            return $pdf->download('laporan-denda-' . $startDate->format('Ymd') . '-' . $endDate->format('Ymd') . '.pdf');
             
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal export: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal export PDF Denda: ' . $e->getMessage());
         }
     }
 
@@ -507,22 +469,24 @@ class LaporanController extends Controller
         try {
             $tahun = $request->tahun ?? now()->year;
             $bulan = $request->bulan ?? null;
-            $status = $request->status ?? null;
-            $jenis = $request->jenis ?? null;
             
-            $query = Peminjaman::with(['user', 'buku', 'petugas'])
-                ->whereYear('created_at', $tahun)
-                ->when($bulan, fn($q) => $q->whereMonth('created_at', $bulan))
-                ->when($status, fn($q) => $q->where('status_pinjam', $status))
-                ->when($jenis, fn($q) => $q->whereHas('user', fn($u) => $u->where('jenis', $jenis)));
+            $startDate = Carbon::createFromDate($tahun, $bulan ?? 1, 1)->startOfMonth();
+            $endDate = $bulan 
+                ? Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()
+                : Carbon::createFromDate($tahun, 12, 31)->endOfDay();
             
-            $data = $query->orderBy('created_at', 'desc')->get();
+            $exportRequest = new Request([
+                'start_date' => $startDate->format('Y-m-d'),
+                'end_date' => $endDate->format('Y-m-d'),
+                'status' => $request->status,
+            ]);
             
-            // TODO: Implement Excel export
-            return redirect()->back()->with('info', 'Fitur export Excel sedang dalam pengembangan');
+            $filename = 'laporan-peminjaman-' . $tahun . ($bulan ? '-bulan-' . $bulan : '') . '.xlsx';
+            
+            return Excel::download(new PeminjamanExport($exportRequest), $filename);
             
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal export: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal export Excel: ' . $e->getMessage());
         }
     }
 
@@ -534,18 +498,32 @@ class LaporanController extends Controller
         try {
             $tahun = $request->tahun ?? now()->year;
             $bulan = $request->bulan ?? null;
+            $status = $request->status ?? null;
+            $jenis = $request->jenis ?? null;
             
-            $query = Peminjaman::with(['user', 'buku', 'petugas'])
+            $query = Peminjaman::with(['user', 'buku'])
                 ->whereYear('created_at', $tahun)
-                ->when($bulan, fn($q) => $q->whereMonth('created_at', $bulan));
+                ->when($bulan, fn($q) => $q->whereMonth('created_at', $bulan))
+                ->when($status, fn($q) => $q->where('status_pinjam', $status))
+                ->when($jenis, fn($q) => $q->whereHas('user', fn($u) => $u->where('jenis', $jenis)));
             
             $data = $query->orderBy('created_at', 'desc')->get();
             
-            // TODO: Implement PDF export
-            return redirect()->back()->with('info', 'Fitur export PDF sedang dalam pengembangan');
+            $totalPeminjaman = $data->count();
+            $totalDenda = $data->sum('denda_total');
+            
+            $pdf = Pdf::loadView('kepala-pustaka.exports.pdf.peminjaman', compact(
+                'data', 'totalPeminjaman', 'totalDenda', 'tahun', 'bulan', 'status', 'jenis'
+            ));
+            
+            $pdf->setPaper('A4', 'landscape');
+            
+            $filename = 'laporan-peminjaman-' . $tahun . ($bulan ? '-bulan-' . $bulan : '') . '.pdf';
+            
+            return $pdf->download($filename);
             
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal export: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal export PDF Peminjaman: ' . $e->getMessage());
         }
     }
 
@@ -557,15 +535,53 @@ class LaporanController extends Controller
         try {
             $tahun = $request->tahun ?? now()->year;
             
-            $data = Kunjungan::whereYear('tanggal', $tahun)
-                ->orderBy('tanggal', 'desc')
-                ->get();
+            $filename = 'laporan-kunjungan-' . $tahun . '.xlsx';
             
-            // TODO: Implement Excel export
-            return redirect()->back()->with('info', 'Fitur export Excel sedang dalam pengembangan');
+            return Excel::download(new KunjunganExport($request), $filename);
             
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal export: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal export Excel: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export Laporan Kunjungan ke PDF
+     */
+    public function exportKunjunganPdf(Request $request)
+    {
+        try {
+            $tahun = $request->tahun ?? now()->year;
+            
+            $kunjunganBulanan = Kunjungan::select(
+                    DB::raw('MONTH(tanggal) as bulan'),
+                    DB::raw('COUNT(*) as total')
+                )
+                ->whereYear('tanggal', $tahun)
+                ->groupBy('bulan')
+                ->orderBy('bulan')
+                ->get()
+                ->map(function($item) {
+                    $bulan = [
+                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                    ];
+                    $item->nama_bulan = $bulan[$item->bulan] ?? $item->bulan;
+                    return $item;
+                });
+            
+            $totalKunjungan = $kunjunganBulanan->sum('total');
+            
+            $pdf = Pdf::loadView('kepala-pustaka.exports.pdf.kunjungan', compact(
+                'kunjunganBulanan', 'totalKunjungan', 'tahun'
+            ));
+            
+            $pdf->setPaper('A4', 'landscape');
+            
+            return $pdf->download('laporan-kunjungan-' . $tahun . '.pdf');
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal export PDF Kunjungan: ' . $e->getMessage());
         }
     }
 
@@ -575,7 +591,30 @@ class LaporanController extends Controller
     public function exportAktivitasExcel(Request $request)
     {
         try {
+            $filename = 'laporan-aktivitas-' . now()->format('Ymd_His') . '.xlsx';
+            
+            return Excel::download(new ActivitiesExport($request), $filename);
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal export Excel: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export Laporan Aktivitas ke PDF
+     */
+    public function exportAktivitasPdf(Request $request)
+    {
+        try {
             $query = ActivityLog::with('user');
+            
+            if ($request->filled('role')) {
+                $query->where('role', $request->role);
+            }
+            
+            if ($request->filled('action')) {
+                $query->where('action', $request->action);
+            }
             
             if ($request->filled('start_date')) {
                 $query->whereDate('created_at', '>=', $request->start_date);
@@ -585,17 +624,20 @@ class LaporanController extends Controller
                 $query->whereDate('created_at', '<=', $request->end_date);
             }
             
-            if ($request->filled('role')) {
-                $query->where('role', $request->role);
-            }
-            
             $data = $query->orderBy('created_at', 'desc')->get();
             
-            // TODO: Implement Excel export
-            return redirect()->back()->with('info', 'Fitur export Excel sedang dalam pengembangan');
+            $totalAktivitas = $data->count();
+            
+            $pdf = Pdf::loadView('kepala-pustaka.exports.pdf.aktivitas', compact(
+                'data', 'totalAktivitas', 'request'
+            ));
+            
+            $pdf->setPaper('A4', 'landscape');
+            
+            return $pdf->download('laporan-aktivitas-' . now()->format('Ymd_His') . '.pdf');
             
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal export: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal export PDF Aktivitas: ' . $e->getMessage());
         }
     }
 
@@ -603,9 +645,6 @@ class LaporanController extends Controller
      * ========== PRIVATE HELPER FUNCTIONS ==========
      */
 
-    /**
-     * Get start date berdasarkan periode
-     */
     private function getStartDateFromPeriode($periode, $request)
     {
         if ($periode == 'kustom' && $request->filled('start_date')) {
@@ -621,9 +660,6 @@ class LaporanController extends Controller
         };
     }
 
-    /**
-     * Get end date berdasarkan periode
-     */
     private function getEndDateFromPeriode($periode, $request)
     {
         if ($periode == 'kustom' && $request->filled('end_date')) {
@@ -639,9 +675,6 @@ class LaporanController extends Controller
         };
     }
 
-    /**
-     * Get start date dari request (untuk export)
-     */
     private function getStartDateFromRequest($request)
     {
         if ($request->filled('start_date')) {
@@ -655,9 +688,6 @@ class LaporanController extends Controller
         return now()->startOfMonth();
     }
 
-    /**
-     * Get end date dari request (untuk export)
-     */
     private function getEndDateFromRequest($request)
     {
         if ($request->filled('end_date')) {
@@ -671,19 +701,14 @@ class LaporanController extends Controller
         return now()->endOfDay();
     }
 
-    /**
-     * Grafik denda harian (30 hari terakhir)
-     */
     private function getGrafikDendaHarian($startDate, $endDate)
     {
         $labels = [];
         $data = [];
         
-        // Hitung jumlah hari
         $days = $startDate->diffInDays($endDate);
-        $days = min($days, 30); // Maksimal 30 hari
+        $days = min($days, 30);
         
-        // Ambil data dari database
         $dailyTotals = Peminjaman::whereBetween('created_at', [$startDate, $endDate])
             ->where('denda_total', '>', 0)
             ->select(DB::raw('DATE(created_at) as tanggal'), DB::raw('SUM(denda_total) as total'))
@@ -701,9 +726,6 @@ class LaporanController extends Controller
         return ['labels' => $labels, 'data' => $data];
     }
 
-    /**
-     * Grafik denda per petugas
-     */
     private function getGrafikDendaPerPetugas($startDate, $endDate)
     {
         $petugas = User::where('role', 'petugas')->get(['id', 'name']);
@@ -723,9 +745,6 @@ class LaporanController extends Controller
         return ['labels' => $labels, 'data' => $data];
     }
 
-    /**
-     * Statistik bulanan
-     */
     private function getStatistikBulanan($startDate, $endDate)
     {
         $statistik = [];
@@ -735,7 +754,6 @@ class LaporanController extends Controller
             $bulanKey = $current->format('Y-m');
             $bulanName = $current->format('M Y');
             
-            // Gunakan query sekali untuk efisiensi
             $data = Peminjaman::whereYear('created_at', $current->year)
                 ->whereMonth('created_at', $current->month)
                 ->where('denda_total', '>', 0)
@@ -757,9 +775,6 @@ class LaporanController extends Controller
         return $statistik;
     }
 
-    /**
-     * Grafik peminjaman per bulan
-     */
     private function getGrafikPeminjamanBulanan($tahun, $status = null, $jenis = null)
     {
         $labels = [];
