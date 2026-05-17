@@ -47,7 +47,7 @@ class AuditBukuController extends Controller
             ));
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            dd('Error: ' . $e->getMessage(), $e->getTraceAsString());
         }
     }
 
