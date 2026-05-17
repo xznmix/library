@@ -458,6 +458,18 @@ class Buku extends Model
                      ->orWhereIn('jenis_koleksi', ['soal', 'modul', 'dokumen']);
     }
 
+    // Tambahkan di dalam class Buku, di area RELATIONS
+
+    public function stockOpnameLogs()
+    {
+        return $this->hasMany(StockOpnameLog::class, 'buku_id');
+    }
+
+    public function auditSchedules()
+    {
+        return $this->hasMany(AuditSchedule::class, 'buku_id');
+    }
+
     /**
      * ===========================
      * ACCESSORS (GETTERS)
