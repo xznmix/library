@@ -149,15 +149,15 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <p class="text-xs text-gray-500">Nama</p>
-                        <p class="font-medium">{{ $denda->user->name }}</p>
+                        <p class="font-medium">{{ $denda->anggota->name ?? $denda->peminjaman?->user?->name ?? '-' }}</p>
                     </div>
                     <div>
                         <p class="text-xs text-gray-500">No. Anggota</p>
-                        <p class="font-mono">{{ $denda->user->no_anggota ?? '-' }}</p>
+                        <p class="font-mono">{{ $denda->anggota->no_anggota ?? $denda->peminjaman?->user?->no_anggota ?? '-' }}</p>
                     </div>
                     <div>
                         <p class="text-xs text-gray-500">Jenis</p>
-                        <p>{{ ucfirst($denda->user->jenis ?? 'Umum') }}</p>
+                        <p>{{ ucfirst($denda->anggota->jenis ?? $denda->peminjaman?->user?->jenis ?? 'Umum') }}</p>
                     </div>
                     <div>
                         <p class="text-xs text-gray-500">Kelas/Jurusan</p>
